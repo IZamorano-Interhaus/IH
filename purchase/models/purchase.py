@@ -558,7 +558,7 @@ class PurchaseOrder(models.Model):
                 # supplier info should be added regardless of the user access rights
                 line.product_id.product_tmpl_id.sudo().write(vals)
     def action_contabilizar(self):
-        precision=self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        
         lista_OC=[]
         sequence=10
         for order in self:
@@ -571,16 +571,16 @@ class PurchaseOrder(models.Model):
                 if line.display_type == 'line_section':
                     seccion_pendiente = line
                     continue
-                if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                if not float_is_zero(line.qty_to_invoice, precision_digits=self.env['decimal.precision'].precision_get('Product Unit of Measure')):
                     if seccion_pendiente:
-                        line_vals = seccion_pendiente._prepare_account_move_line()
-                        line_vals.update({'sequence': sequence})
-                        valor_factura['invoice_line_ids'].append((0, 0, line_vals))
+                        dato_linea = seccion_pendiente._prepare_account_move_line()
+                        dato_linea.update({'sequence': sequence})
+                        valor_factura['invoice_line_ids'].append((0, 0, dato_linea))
                         sequence += 1
                         seccion_pendiente = None
-                    line_vals = line._prepare_account_move_line()
-                    line_vals.update({'sequence': sequence})
-                    valor_factura['invoice_line_ids'].append((0, 0, line_vals))
+                    dato_linea = line._prepare_account_move_line()
+                    dato_linea.update({'sequence': sequence})
+                    valor_factura['invoice_line_ids'].append((0, 0, dato_linea))
                     sequence += 1
             lista_OC.append(valor_factura)
         if not lista_OC:
@@ -591,21 +591,21 @@ class PurchaseOrder(models.Model):
             origins = set()
             payment_refs = set()
             refs = set()
-            ref_invoice_vals = None
+            ref_valor_OC = None
             for lista_OC in invoices:
-                if not ref_invoice_vals:
-                    ref_invoice_vals = lista_OC
+                if not ref_valor_OC:
+                    ref_valor_OC = lista_OC
                 else:
-                    ref_invoice_vals['invoice_line_ids'] += lista_OC['invoice_line_ids']
+                    ref_valor_OC['invoice_line_ids'] += lista_OC['invoice_line_ids']
                 origins.add(lista_OC['invoice_origin'])
                 payment_refs.add(lista_OC['payment_reference'])
                 refs.add(lista_OC['ref'])
-            ref_invoice_vals.update({
+            ref_valor_OC.update({
                 'ref': ', '.join(refs)[:2000],
                 'invoice_origin': ', '.join(origins),
                 'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
             })
-            new_lista_OC.append(ref_invoice_vals)
+            new_lista_OC.append(ref_valor_OC)
         lista_OC = new_lista_OC
 
         # 3) Create invoices.
