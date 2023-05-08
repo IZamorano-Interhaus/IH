@@ -64,29 +64,10 @@ class PurchaseOrder(models.Model):
                 order.invoice_status = 'invoiced'
             else:
                 order.invoice_status = 'no'
+    
+#estado contabilizacion OC
 
-    @api.depends('state', 'order_line.qty_to_invoice')
-    def _get_Contado(self):
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        for order in self:
-            if order.state not in ('purchase', 'done'):
-                order.OC_status = 'Hola Mundo'
-                continue
-            if any(
-                not float_is_zero(line.qty_to_invoice, precision_digits=precision) 
-                for line in order.order_line.filtered(lambda l: not l.display_type)
-            ):
-                order.OC_status = 'Hola Mundo'
-            elif (
-                all(
-                    float_is_zero(line.qty_to_invoice, precision_digits=precision)
-                    for line in order.order_line.filtered(lambda l: not l.display_type)
-                )
-                and order.invoice_ids
-            ):
-                order.OC_status = 'Hola Mundo'
-            else:
-                order.OC_status = 'Hola Mundo'
+
 
 
     @api.depends('order_line.invoice_lines.move_id')
@@ -138,15 +119,14 @@ class PurchaseOrder(models.Model):
     invoice_status = fields.Selection([
         ('no', 'Nothing to Bill'),
         ('to invoice', 'Waiting Bills'),
-        ('invoiced', 'Fully Billed'),        
+        ('invoiced', 'Fully Billed'),
+        
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
-
     OC_status = fields.Selection([
         ('sin contabilizar','No contabilizado'),
         ('sin contabilizar 2','No contabilizado 2'),
-        ('Hola Mundo','Contabilizado'),
-    ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True, copy=False, default='Hola Mundo')
-
+        ('contabilizado','Contabilizado'),
+    ], string="Estado Contabilización OC",  store=True, readonly=True, copy=False)
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
         help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
