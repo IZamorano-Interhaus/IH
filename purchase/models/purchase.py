@@ -68,11 +68,11 @@ class PurchaseOrder(models.Model):
     def _get_Contado(self):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for order in self:
-            if order.state not in ('purchase', 'done'):
+            """ if order.state not in ('purchase', 'done'):
                 order.OC_status = 'contabilizado'
-                continue
-            elif (all (order.name=='P00017')and order.invoice_ids):
-                order.OC_status = 'sin contabilizar'
+                continue """
+            if (all (order.name=='P00017')and order.invoice_ids):
+                order.OC_status = 'contabilizado'
             else:
                 order.OC_status = 'sin contabilizar 2'
 
@@ -133,7 +133,7 @@ class PurchaseOrder(models.Model):
         ('sin contabilizar','No contabilizado'),
         ('sin contabilizar 2','No contabilizado 2'),
         ('contabilizado','Contabilizado'),
-    ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True,copy=False,default='sin contabilizar')
+    ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True, copy=False, default='sin contabilizar')
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
         help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
