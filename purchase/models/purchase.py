@@ -69,10 +69,10 @@ class PurchaseOrder(models.Model):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for order in self:
             order.OC_status = 'contabilizado'
-            if order.state not in ('purchase', 'draft'):
+            """ if order.state not in ('purchase', 'draft'):
                 order.OC_status = 'sin contabilizar'
-                continue
-            elif  (order.name=='P00017'):
+                continue """
+            if  (order.name=='P00017'):
                 order.OC_status = 'contabilizado'
 
             else:
