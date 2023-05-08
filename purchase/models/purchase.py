@@ -554,15 +554,15 @@ class PurchaseOrder(models.Model):
             valor_factura= order._prepare_invoice()
             for line in order.order_line:
                 if line.display_type == 'line_section':
-                    pending_section = line
+                    seccion_pendiente = line
                     continue
                 if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
-                    if pending_section:
-                        line_vals = pending_section._prepare_account_move_line()
+                    if seccion_pendiente:
+                        line_vals = seccion_pendiente._prepare_account_move_line()
                         line_vals.update({'sequence': sequence})
                         valor_factura['invoice_line_ids'].append((0, 0, line_vals))
                         sequence += 1
-                        pending_section = None
+                        seccion_pendiente = None
                     line_vals = line._prepare_account_move_line()
                     line_vals.update({'sequence': sequence})
                     valor_factura['invoice_line_ids'].append((0, 0, line_vals))
