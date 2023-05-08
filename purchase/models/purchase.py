@@ -138,14 +138,15 @@ class PurchaseOrder(models.Model):
     invoice_status = fields.Selection([
         ('no', 'Nothing to Bill'),
         ('to invoice', 'Waiting Bills'),
-        ('invoiced', 'Fully Billed'),
-        
+        ('invoiced', 'Fully Billed'),        
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
+
     OC_status = fields.Selection([
         ('sin contabilizar','No contabilizado'),
         ('sin contabilizar 2','No contabilizado 2'),
-        ('contabilizado','Contabilizado'),
+        ('Hola Mundo','Contabilizado'),
     ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True, copy=False, default='Hola Mundo')
+
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
         help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
