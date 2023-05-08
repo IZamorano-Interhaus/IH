@@ -543,8 +543,31 @@ class PurchaseOrder(models.Model):
                 line.product_id.sudo().write(vals)
 
     def action_contabilizar(self):
-        
-        raise ValidationError("Hola mundo")
+        precision=self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        lista_OC=[]
+        sequence=10
+        for order in self:
+            if order.invoice_status != 'to invoice':
+                continue
+            order=order.with_company(order.company_id)
+            seccion_pendiente=None
+            valor_factura= order._prepare_invoice()
+            for line in order.order_line:
+                if line.display_type == 'line_section':
+                    pending_section = line
+                    continue
+                if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                    if pending_section:
+                        line_vals = pending_section._prepare_account_move_line()
+                        line_vals.update({'sequence': sequence})
+                        valor_factura['invoice_line_ids'].append((0, 0, line_vals))
+                        sequence += 1
+                        pending_section = None
+                    line_vals = line._prepare_account_move_line()
+                    line_vals.update({'sequence': sequence})
+                    valor_factura['invoice_line_ids'].append((0, 0, line_vals))
+                    sequence += 1
+            lista_OC.append(valor_factura)
     
     def action_create_invoice(self):
         """Create the invoice associated to the PO.
