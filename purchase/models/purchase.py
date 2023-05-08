@@ -73,12 +73,10 @@ class PurchaseOrder(models.Model):
                 order.OC_status = 'sin contabilizar'
                 continue
 
-            elif (
-                 order.name=="P00017"
-            ):
+            elif(order.name=="P00017"):
                 order.OC_status == 'contabilizado'
             else:
-                order.OC_status = 'sin contabilizar'
+                order.OC_status = 'sin contabilizar 2'
 
 
     @api.depends('order_line.invoice_lines.move_id')
@@ -135,6 +133,7 @@ class PurchaseOrder(models.Model):
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     OC_status = fields.Selection([
         ('sin contabilizar','No contabilizado'),
+        ('sin contabilizar 2','No contabilizado 2'),
         ('contabilizado','Contabilizado'),
     ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True,copy=False,default='sin contabilizar')
     date_planned = fields.Datetime(
