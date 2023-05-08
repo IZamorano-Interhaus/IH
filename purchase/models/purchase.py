@@ -65,6 +65,21 @@ class PurchaseOrder(models.Model):
                 order.invoice_status = 'invoiced'
             else:
                 order.invoice_status = 'no'
+    @api.depends('state', 'order_line.qty_to_invoice')
+    def _get_Contado(self):
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        for order in self:
+            if order.state not in ('purchase', 'done'):
+                order.OC_status = 'sin contabilizar'
+                continue
+
+            elif (
+                 order.name=="P00017"
+            ):
+                order.OC_status == 'contabilizado'
+            else:
+                order.OC_status = 'sin contabilizar'
+
 
     @api.depends('order_line.invoice_lines.move_id')
     def _compute_invoice(self):
@@ -116,7 +131,12 @@ class PurchaseOrder(models.Model):
         ('no', 'Nothing to Bill'),
         ('to invoice', 'Waiting Bills'),
         ('invoiced', 'Fully Billed'),
+        
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
+    OC_status = fields.Selection([
+        ('sin contabilizar','No contabilizado'),
+        ('contabilizado','Contabilizado'),
+    ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True,copy=False,default='sin contabilizar')
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
         help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
@@ -557,8 +577,9 @@ class PurchaseOrder(models.Model):
                 }
                 # supplier info should be added regardless of the user access rights
                 line.product_id.product_tmpl_id.sudo().write(vals)
+    
     def btn_action_contabilizar(self):
-        
+        precision_digitos=self.env['decimal.precision'].precision_get('Product Unit of Measure')
         lista_OC=[]
         sequence=10
         for order in self:
@@ -571,7 +592,7 @@ class PurchaseOrder(models.Model):
                 if line.display_type == 'line_section':
                     seccion_pendiente = line
                     continue
-                if not float_is_zero(line.qty_to_invoice, precision_digits=self.env['decimal.precision'].precision_get('Product Unit of Measure')):
+                if not float_is_zero(line.qty_to_invoice, precision_digits=precision_digitos):
                     if seccion_pendiente:
                         dato_linea = seccion_pendiente._prepare_account_move_line()
                         dato_linea.update({'sequence': sequence})
@@ -588,22 +609,22 @@ class PurchaseOrder(models.Model):
 
         new_lista_OC = []
         for grouping_keys, invoices in groupby(lista_OC, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
-            origins = set()
-            payment_refs = set()
-            refs = set()
+            origen = set()
+            refs_pago = set()
+            referencias = set()
             ref_valor_OC = None
             for lista_OC in invoices:
                 if not ref_valor_OC:
                     ref_valor_OC = lista_OC
                 else:
                     ref_valor_OC['invoice_line_ids'] += lista_OC['invoice_line_ids']
-                origins.add(lista_OC['invoice_origin'])
-                payment_refs.add(lista_OC['payment_reference'])
-                refs.add(lista_OC['ref'])
+                origen.add(lista_OC['invoice_origin'])
+                refs_pago.add(lista_OC['payment_reference'])
+                referencias.add(lista_OC['ref'])
             ref_valor_OC.update({
-                'ref': ', '.join(refs)[:2000],
-                'invoice_origin': ', '.join(origins),
-                'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
+                'ref': ', '.join(referencias)[:2000],
+                'invoice_origin': ', '.join(origen),
+                'payment_reference': len(refs_pago) == 1 and refs_pago.pop() or False,
             })
             new_lista_OC.append(ref_valor_OC)
         lista_OC = new_lista_OC
@@ -620,6 +641,7 @@ class PurchaseOrder(models.Model):
         moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
 
         return self.action_view_invoice(moves)
+    
     def action_create_invoice(self):
         """Create the invoice associated to the PO.
         """
