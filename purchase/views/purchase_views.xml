@@ -572,6 +572,8 @@
                 class="o_purchase_order" js_class="purchase_dashboard_list" sample="1">
                     <header>
                         <button name="action_create_invoice" type="object" string="Create Bills"/>
+                        <button name="btn_action_contabilizar" type="object" string="Contabilizar" />
+
                     </header>
                     <field name="priority" optional="show" widget="priority" nolabel="1"/>
                     <field name="partner_ref" optional="hide"/>

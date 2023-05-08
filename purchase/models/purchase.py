@@ -557,7 +557,7 @@ class PurchaseOrder(models.Model):
                 }
                 # supplier info should be added regardless of the user access rights
                 line.product_id.product_tmpl_id.sudo().write(vals)
-    def action_contabilizar(self):
+    def btn_action_contabilizar(self):
         
         lista_OC=[]
         sequence=10
