@@ -72,9 +72,9 @@ class PurchaseOrder(models.Model):
                 order.OC_status = 'sin contabilizar'
                 continue
             if any(
-                not float_is_zero(line.qty_to_invoice, precision_digits=precision)
+                not float_is_zero(line.qty_to_invoice, precision_digits=precision) 
                 for line in order.order_line.filtered(lambda l: not l.display_type)
-            ):
+            )and order.name=="P00017":
                 order.OC_status = 'contabilizado'
             elif (
                 all(
