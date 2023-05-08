@@ -85,7 +85,7 @@ class PurchaseOrder(models.Model):
             ):
                 order.OC_status = 'sin contabilizar 2'
             else:
-                order.OC_status = 'sin contabilizar'
+                order.OC_status = 'contabilizado'
 
 
     @api.depends('order_line.invoice_lines.move_id')
