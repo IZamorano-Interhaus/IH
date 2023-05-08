@@ -72,7 +72,7 @@ class PurchaseOrder(models.Model):
                 order.OC_status = 'sin contabilizar'
                 continue
             elif(order.name=='P00017'):
-                order.OC_status == 'contabilizado'
+                order.OC_status = 'contabilizado'
             else:
                 order.OC_status = 'sin contabilizar 2'
 
