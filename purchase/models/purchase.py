@@ -49,7 +49,6 @@ class PurchaseOrder(models.Model):
             if order.state not in ('purchase', 'done'):
                 order.invoice_status = 'no'
                 continue
-
             if any(
                 not float_is_zero(line.qty_to_invoice, precision_digits=precision)
                 for line in order.order_line.filtered(lambda l: not l.display_type)
@@ -72,8 +71,7 @@ class PurchaseOrder(models.Model):
             if order.state not in ('purchase', 'done'):
                 order.OC_status = 'sin contabilizar'
                 continue
-
-            elif(order.name=="P00017"):
+            elif(order.name=='P00017'):
                 order.OC_status == 'contabilizado'
             else:
                 order.OC_status = 'sin contabilizar 2'
