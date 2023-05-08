@@ -71,7 +71,7 @@ class PurchaseOrder(models.Model):
             if order.state not in ('purchase', 'done'):
                 order.OC_status = 'sin contabilizar'
                 continue
-            elif(order.name=='P00017'):
+            elif (all (order.name=='P00017')and order.invoice_ids):
                 order.OC_status = 'contabilizado'
             else:
                 order.OC_status = 'sin contabilizar 2'
