@@ -568,7 +568,43 @@ class PurchaseOrder(models.Model):
                     valor_factura['invoice_line_ids'].append((0, 0, line_vals))
                     sequence += 1
             lista_OC.append(valor_factura)
-    
+        if not lista_OC:
+            raise UserError(_('There is no invoiceable line. If a product has a control policy based on received quantity, please make sure that a quantity has been received.'))
+
+        new_lista_OC = []
+        for grouping_keys, invoices in groupby(lista_OC, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
+            origins = set()
+            payment_refs = set()
+            refs = set()
+            ref_invoice_vals = None
+            for lista_OC in invoices:
+                if not ref_invoice_vals:
+                    ref_invoice_vals = lista_OC
+                else:
+                    ref_invoice_vals['invoice_line_ids'] += lista_OC['invoice_line_ids']
+                origins.add(lista_OC['invoice_origin'])
+                payment_refs.add(lista_OC['payment_reference'])
+                refs.add(lista_OC['ref'])
+            ref_invoice_vals.update({
+                'ref': ', '.join(refs)[:2000],
+                'invoice_origin': ', '.join(origins),
+                'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
+            })
+            new_lista_OC.append(ref_invoice_vals)
+        lista_OC = new_lista_OC
+
+        # 3) Create invoices.
+        moves = self.env['account.move']
+        AccountMove = self.env['account.move'].with_context(default_move_type='in_invoice')
+        for vals in new_lista_OC:
+            moves |= AccountMove.with_company(vals['company_id']).create(vals)
+
+        # 4) Some moves might actually be refunds: convert them if the total amount is negative
+        # We do this after the moves have been created since we need taxes, etc. to know if the total
+        # is actually negative or not
+        moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
+
+        return self.action_view_invoice(moves)
     def action_create_invoice(self):
         """Create the invoice associated to the PO.
         """
