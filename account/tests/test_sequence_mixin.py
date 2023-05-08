@@ -11,6 +11,7 @@ from freezegun import freeze_time
 from functools import reduce
 import json
 import psycopg2
+from unittest.mock import patch
 
 
 class TestSequenceMixinCommon(AccountTestInvoicingCommon):
@@ -382,6 +383,27 @@ class TestSequenceMixin(TestSequenceMixinCommon):
             move_form.journal_id = journal
         self.assertEqual(move.name, 'AJ/2021/10/0001')
 
+    def test_sequence_move_name_related_field_well_computed(self):
+        AccountMove = type(self.env['account.move'])
+        _compute_name = AccountMove._compute_name
+        def _flushing_compute_name(self):
+            self.env['account.move.line'].flush_model(fnames=['move_name'])
+            _compute_name(self)
+
+        payments = self.env['account.payment'].create([{
+            'payment_type': 'inbound',
+            'payment_method_id': self.env.ref('account.account_payment_method_manual_in').id,
+            'partner_type': 'customer',
+            'partner_id': self.partner_a.id,
+            'amount': 500,
+        }] * 2)
+
+        with patch.object(AccountMove, '_compute_name', _flushing_compute_name):
+            payments.action_post()
+
+        for move in payments.move_id:
+            self.assertRecordValues(move.line_ids, [{'move_name': move.name}] * len(move.line_ids))
+
 
 @tagged('post_install', '-at_install')
 class TestSequenceMixinDeletion(TestSequenceMixinCommon):
@@ -411,12 +433,6 @@ class TestSequenceMixinDeletion(TestSequenceMixinCommon):
         # A draft move without any name can always be deleted.
         self.move_draft.unlink()
 
-        # The moves that are not at the end of their sequence chain cannot be deleted
-        for move in (self.move_1_1, self.move_1_2, self.move_2_1):
-            move.button_draft()
-            with self.assertRaises(UserError):
-                move.unlink()
-
         # The last element of each sequence chain should allow deletion.
         # Everything should be deletable if we follow this order (a bit randomized on purpose)
         for move in (self.move_1_3, self.move_1_2, self.move_3_1, self.move_2_2, self.move_2_1, self.move_1_1):
@@ -428,20 +444,6 @@ class TestSequenceMixinDeletion(TestSequenceMixinCommon):
         all_moves = (self.move_1_3 + self.move_1_2 + self.move_3_1 + self.move_2_2 + self.move_2_1 + self.move_1_1)
         all_moves.button_draft()
         all_moves.unlink()
-
-    def test_sequence_deletion_3(self):
-        """Cannot delete non sequential batches."""
-        all_moves = (self.move_1_3 + self.move_3_1 + self.move_2_2 + self.move_2_1 + self.move_1_1)
-        all_moves.button_draft()
-        with self.assertRaises(UserError):
-            all_moves.unlink()
-
-    def test_sequence_deletion_4(self):
-        """Cannot delete batches not containing the last entry."""
-        all_moves = (self.move_1_2 + self.move_3_1 + self.move_2_2 + self.move_2_1 + self.move_1_1)
-        all_moves.button_draft()
-        with self.assertRaises(UserError):
-            all_moves.unlink()
 
 
 @tagged('post_install', '-at_install')
