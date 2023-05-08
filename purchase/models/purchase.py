@@ -68,13 +68,24 @@ class PurchaseOrder(models.Model):
     def _get_Contado(self):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for order in self:
-            """ if order.state not in ('purchase', 'done'):
+            if order.state not in ('purchase', 'done'):
+                order.OC_status = 'sin contabilizar'
+                continue
+            if any(
+                not float_is_zero(line.qty_to_invoice, precision_digits=precision)
+                for line in order.order_line.filtered(lambda l: not l.display_type)
+            ):
                 order.OC_status = 'contabilizado'
-                continue """
-            if (any (order.name=='P00017')and order.invoice_ids):
-                order.OC_status = 'contabilizado'
-            else:
+            elif (
+                all(
+                    float_is_zero(line.qty_to_invoice, precision_digits=precision)
+                    for line in order.order_line.filtered(lambda l: not l.display_type)
+                )
+                and order.invoice_ids
+            ):
                 order.OC_status = 'sin contabilizar 2'
+            else:
+                order.OC_status = 'sin contabilizar'
 
 
     @api.depends('order_line.invoice_lines.move_id')
