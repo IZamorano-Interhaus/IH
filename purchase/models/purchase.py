@@ -133,7 +133,7 @@ class PurchaseOrder(models.Model):
         ('sin contabilizar','No contabilizado'),
         ('contabilizado','OC contabilizado'),
 
-    ], string="Estado Contabilizacion OC", compute='_get_contado', store=True, readonly=True, copy=False, default='sin contabilizar')
+    ], string="OC 2", compute='_get_contado', store=True, readonly=True, copy=False, default='sin contabilizar')
 
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
