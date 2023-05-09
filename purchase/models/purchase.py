@@ -69,7 +69,7 @@ class PurchaseOrder(models.Model):
     def _get_contado(self):
         for order in self:
             order.OC_status='contabilizado' 
-            if (order.name=='P00017'):
+            if (order.invoice_status!='to invoice'):
                 order.OC_status='contabilizado'
                 raise TypeError("Order = P00017")
             else:
