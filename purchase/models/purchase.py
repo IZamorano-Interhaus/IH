@@ -65,16 +65,28 @@ class PurchaseOrder(models.Model):
             else:
                 order.invoice_status = 'no'
     #_get contado
-    @api.depends('name')
+    @api.depends('state', 'order_line.qty_to_invoice','name')
     def _get_contado(self):
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for order in self:
-            order.OC_status='contabilizado' 
-            if (order.name=='P00017'):
-                order.OC_status='contabilizado'
-                raise TypeError("Order = P00017")
+            if order.state not in ('purchase', 'done'):
+                order.OC_status = 'no'
+                continue
+            if any(
+                not float_is_zero(line.qty_to_invoice, precision_digits=precision)
+                for line in order.order_line.filtered(lambda l: not l.display_type)
+            ):
+                order.OC_status = 'to invoice'
+            elif (
+                all(
+                    float_is_zero(line.qty_to_invoice, precision_digits=precision)
+                    for line in order.order_line.filtered(lambda l: not l.display_type)
+                )
+                and order.invoice_ids
+            ):
+                order.OC_status = 'invoiced'
             else:
-                order.OC_status='sin contabilizar'
-        raise TypeError("Hola mundo")
+                order.OC_status = 'contabilizado'
          
 
 
@@ -134,6 +146,9 @@ class PurchaseOrder(models.Model):
     OC_status = fields.Selection([
         ('sin contabilizar','No contabilizado'),
         ('contabilizado','OC contabilizado'),
+        ('no', 'Nothing to Bill'),
+        ('to invoice', 'Waiting Bills'),
+        ('invoiced', 'Fully Billed'),
 
     ], string="OC Contabilizado", compute='_get_contado', store=True, readonly=True, copy=False)
 
