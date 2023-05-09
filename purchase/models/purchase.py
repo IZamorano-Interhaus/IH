@@ -68,7 +68,7 @@ class PurchaseOrder(models.Model):
     @api.depends('state', 'order_line.qty_to_invoice','name')
     def _get_contado(self):
         for order in self:
-            order.OC_status='1'
+            order.OC_status='b'
          
 
 
@@ -125,11 +125,11 @@ class PurchaseOrder(models.Model):
         
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     OC_status = fields.Selection([
-        ('1', 'Nothing to Bill'),
-        ('2', 'Waiting Bills'),
-        ('3', 'Fully Billed'),
+        ('a', 'Nothing to Bill'),
+        ('b', 'Waiting Bills'),
+        ('c', 'Fully Billed'),
         
-    ], string='Billing Status', compute='_get_contado', store=True, readonly=True, copy=False, default='1')
+    ], string='Billing Status', compute='_get_contado', store=True, readonly=True, copy=False, default='a')
     
     
 
