@@ -144,13 +144,14 @@ class PurchaseOrder(models.Model):
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     
     OC_status = fields.Selection([
-        ('sin contabilizar','No contabilizado'),
-        ('contabilizado','OC contabilizado'),
         ('no', 'Nothing to Bill'),
+        ('sin contabilizar','No contabilizado'),
         ('to invoice', 'Waiting Bills'),
+        
+        ('contabilizado','OC contabilizado'),
         ('invoiced', 'Fully Billed'),
 
-    ], string="OC Contabilizado", compute='_get_contado', store=True, readonly=True, copy=False, default='no')
+    ], string="OC Contabilizado", compute='_get_contado', store=True, readonly=True, copy=False, default='contabilizado')
 
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
