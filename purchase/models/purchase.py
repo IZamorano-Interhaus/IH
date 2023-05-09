@@ -64,7 +64,7 @@ class PurchaseOrder(models.Model):
                 order.invoice_status = 'invoiced'
             else:
                 order.invoice_status = 'no'
-    @api.depends('state', 'order_line.qty_to_invoice')
+    @api.depends('name','state')
     def _get_Contado(self):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for order in self:
