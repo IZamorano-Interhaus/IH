@@ -67,11 +67,11 @@ class PurchaseOrder(models.Model):
     #_get contado
     def _get_contado(self):
         OC_status='contabilizado'
+        """ 
         for order in self:
-            order.OC_status='contabilizado'
-            """ 
+            order.OC_status='contabilizado' 
             if (order.name=='P00017'):
-                order.OC_status='contabiliado'
+                order.OC_status='contabilizado'
             else:
                 order.OC_status='sin contabilizar' """
 
@@ -132,6 +132,7 @@ class PurchaseOrder(models.Model):
     OC_status = fields.Selection([
         ('sin contabilizar','No contabilizado'),
         ('contabilizado','OC contabilizado'),
+
     ], string="Estado Contabilizacion OC", compute='_get_contado', store=True, readonly=True, copy=False, default='sin contabilizar')
 
     date_planned = fields.Datetime(
