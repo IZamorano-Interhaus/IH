@@ -130,7 +130,7 @@ class PurchaseOrder(models.Model):
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     
     OC_status = fields.Selection([
-        ('sin contabilizar','No contabilizado'),
+        ('sin contabilizar','No contabilizado 2'),
         ('contabilizado','OC contabilizado'),
 
     ], string="OC 2", compute='_get_contado', store=True, readonly=True, copy=False, default='sin contabilizar')
