@@ -67,26 +67,8 @@ class PurchaseOrder(models.Model):
     #_get contado
     @api.depends('state', 'order_line.qty_to_invoice','name')
     def _get_contado(self):
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for order in self:
-            if order.state not in ('purchase', 'done'):
-                order.OC_status = 'no'
-                continue
-            if any(
-                not float_is_zero(line.qty_to_invoice, precision_digits=precision)
-                for line in order.order_line.filtered(lambda l: not l.display_type)
-            ):
-                order.OC_status = 'to invoice'
-            elif (
-                all(
-                    float_is_zero(line.qty_to_invoice, precision_digits=precision)
-                    for line in order.order_line.filtered(lambda l: not l.display_type)
-                )
-                and order.invoice_ids
-            ):
-                order.OC_status = 'invoiced'
-            else:
-                order.OC_status = 'contabilizado'
+            order.OC_status='1'
          
 
 
@@ -142,16 +124,14 @@ class PurchaseOrder(models.Model):
         ('invoiced', 'Fully Billed'),
         
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
-    
     OC_status = fields.Selection([
-        ('no', 'Nothing to Bill'),
-        ('sin contabilizar','No contabilizado'),
-        ('to invoice', 'Waiting Bills'),
+        ('1', 'Nothing to Bill'),
+        ('2', 'Waiting Bills'),
+        ('3', 'Fully Billed'),
         
-        ('contabilizado','OC contabilizado'),
-        ('invoiced', 'Fully Billed'),
-
-    ], string="OC Contabilizado", compute='_get_contado', store=True, readonly=True, copy=False, default='to invoice')
+    ], string='Billing Status', compute='_get_contado', store=True, readonly=True, copy=False, default='1')
+    
+    
 
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
