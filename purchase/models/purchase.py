@@ -136,9 +136,9 @@ class PurchaseOrder(models.Model):
     invoice_count = fields.Integer(compute="_compute_invoice", string='Bill Count', copy=False, default=0, store=True)
     invoice_ids = fields.Many2many('account.move', compute="_compute_invoice", string='Bills', copy=False, store=True)
     invoice_status = fields.Selection([
-        ('no', 'Nothing to Bill'),
-        ('to invoice', 'Waiting Bills'),
-        ('invoiced', 'Fully Billed'),
+        ('no', 'Nothing to Bill 1'),
+        ('to invoice', 'Waiting Bills 1'),
+        ('invoiced', 'Fully Billed 1'),
         
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     
