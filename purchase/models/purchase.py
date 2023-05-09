@@ -150,7 +150,7 @@ class PurchaseOrder(models.Model):
         ('to invoice', 'Waiting Bills'),
         ('invoiced', 'Fully Billed'),
 
-    ], string="OC Contabilizado", compute='_get_contado', store=True, readonly=True, copy=False)
+    ], string="OC Contabilizado", compute='_get_contado', store=True, readonly=True, copy=False, default='no')
 
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
