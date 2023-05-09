@@ -145,7 +145,7 @@ class PurchaseOrder(models.Model):
     
     OC_status = fields.Selection([
         ('no', 'Nothing to Bill'),
-        ('sin contabilizar','No contabilizado'),
+        
         ('to invoice', 'Waiting Bills'),
         
         ('contabilizado','OC contabilizado'),
