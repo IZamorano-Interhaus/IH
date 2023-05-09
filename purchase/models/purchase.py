@@ -65,15 +65,15 @@ class PurchaseOrder(models.Model):
             else:
                 order.invoice_status = 'no'
     #_get contado
+    @api.depends('name')
     def _get_contado(self):
-        OC_status='contabilizado'
-        """ 
+  
         for order in self:
             order.OC_status='contabilizado' 
             if (order.name=='P00017'):
                 order.OC_status='contabilizado'
             else:
-                order.OC_status='sin contabilizar' """
+                order.OC_status='sin contabilizar' 
 
 
     @api.depends('order_line.invoice_lines.move_id')
@@ -130,10 +130,10 @@ class PurchaseOrder(models.Model):
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     
     OC_status = fields.Selection([
-        ('sin contabilizar','No contabilizado 2'),
+        ('sin contabilizar','No contabilizado'),
         ('contabilizado','OC contabilizado'),
 
-    ], string="OC 2", compute='_get_contado', store=False, readonly=False, copy=False, default='sin contabilizar')
+    ], string="OC Contabilizado", compute='_get_contado', store=True, readonly=True, copy=False, default='sin contabilizar')
 
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,

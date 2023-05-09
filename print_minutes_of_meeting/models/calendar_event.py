@@ -24,6 +24,7 @@ from odoo import models, fields, api
 
 class CalendarEvent(models.Model):
     _inherit = 'calendar.event'
+    _description = 'evento calendario'
 
     responsible_user_id = fields.Many2one('res.users',
                                           help="The person who is responsible for the event")
@@ -83,6 +84,7 @@ class CalendarEvent(models.Model):
 class MeetingAgenda(models.Model):
     _name = 'meeting.agenda'
     _rec_name = 'topic'
+    _description='agenda'
 
     topic = fields.Char()
     description = fields.Char()
