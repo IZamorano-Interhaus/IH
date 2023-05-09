@@ -64,29 +64,19 @@ class PurchaseOrder(models.Model):
                 order.invoice_status = 'invoiced'
             else:
                 order.invoice_status = 'no'
-    #_get contado
     @api.depends('state', 'order_line.qty_to_invoice')
-    def _get_contado(self):
+    def _get_Contado(self):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for order in self:
-            if order.state not in ('purchase', 'done'):
-                order.OC_status = 'no'
+            order.OC_status = 'contabilizado'
+            if order.state not in ('purchase', 'draft'):
+                order.OC_status = 'sin contabilizar'
                 continue
-            if any(
-                not float_is_zero(line.qty_to_invoice, precision_digits=precision)
-                for line in order.order_line.filtered(lambda l: not l.display_type)
-            ):
-                order.OC_status = 'to invoice'
-            elif (
-                all(
-                    float_is_zero(line.qty_to_invoice, precision_digits=precision)
-                    for line in order.order_line.filtered(lambda l: not l.display_type)
-                )
-                and order.invoice_ids
-            ):
-                order.OC_status = 'invoiced'
+            elif  (order.name=='P00017'):
+                order.OC_status = 'contabilizado'
+
             else:
-                order.OC_status = 'no'
+                order.OC_status = 'sin contabilizar 2'
 
 
     @api.depends('order_line.invoice_lines.move_id')
@@ -136,21 +126,16 @@ class PurchaseOrder(models.Model):
     invoice_count = fields.Integer(compute="_compute_invoice", string='Bill Count', copy=False, default=0, store=True)
     invoice_ids = fields.Many2many('account.move', compute="_compute_invoice", string='Bills', copy=False, store=True)
     invoice_status = fields.Selection([
-        ('no', 'Nothing to Bill 1'),
-        ('to invoice', 'Waiting Bills 1'),
-        ('invoiced', 'Fully Billed 1'),
+        ('no', 'Nothing to Bill'),
+        ('to invoice', 'Waiting Bills'),
+        ('invoiced', 'Fully Billed'),
         
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
-    
     OC_status = fields.Selection([
-        ('no', 'Nothing to Bill 2'),
-        ('to invoice', 'Waiting Bills 2'),
-        ('invoiced', 'Fully Billed 2'),
-        
-    ], string='Billing Status', compute='_get_contado', store=True, readonly=True, copy=False, default='no')
-    
-    
-
+        ('sin contabilizar','No contabilizado'),
+        ('sin contabilizar 2','No contabilizado 2'),
+        ('contabilizado','Contabilizado'),
+    ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True, copy=False)
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
         help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
