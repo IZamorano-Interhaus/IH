@@ -142,9 +142,9 @@ class PurchaseOrder(models.Model):
         
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     OC_status = fields.Selection([
-        ('no', 'Nothing to Bill'),
-        ('to invoice', 'Waiting Bills'),
-        ('invoiced', 'Fully Billed'),
+        ('no', 'Nothing to Bill 2'),
+        ('to invoice', 'Waiting Bills 2'),
+        ('invoiced', 'Fully Billed 2'),
         
     ], string='Billing Status', compute='_get_contado', store=True, readonly=True, copy=False, default='no')
     
