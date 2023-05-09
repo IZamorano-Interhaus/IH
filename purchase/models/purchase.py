@@ -65,11 +65,12 @@ class PurchaseOrder(models.Model):
             else:
                 order.invoice_status = 'no'
     #_get contado
-    @api.depends('state', 'order_line.qty_to_invoice','name')
+    @api.depends('name')
     def _get_contado(self):
         for order in self:
             order.OC_status='b'
-         
+        if order.name=='P00017':
+            order.OC_status='c' 
 
 
     @api.depends('order_line.invoice_lines.move_id')
