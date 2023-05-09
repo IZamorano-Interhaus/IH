@@ -65,12 +65,28 @@ class PurchaseOrder(models.Model):
             else:
                 order.invoice_status = 'no'
     #_get contado
-    @api.depends('name')
+    @api.depends('state', 'order_line.qty_to_invoice')
     def _get_contado(self):
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for order in self:
-            order.OC_status='b'
-        if order.name=='P00017':
-            order.OC_status='c' 
+            if order.state not in ('purchase', 'done'):
+                order.OC_status = 'no'
+                continue
+            if any(
+                not float_is_zero(line.qty_to_invoice, precision_digits=precision)
+                for line in order.order_line.filtered(lambda l: not l.display_type)
+            ):
+                order.OC_status = 'to invoice'
+            elif (
+                all(
+                    float_is_zero(line.qty_to_invoice, precision_digits=precision)
+                    for line in order.order_line.filtered(lambda l: not l.display_type)
+                )
+                and order.invoice_ids
+            ):
+                order.OC_status = 'invoiced'
+            else:
+                order.OC_status = 'no'
 
 
     @api.depends('order_line.invoice_lines.move_id')
@@ -126,11 +142,11 @@ class PurchaseOrder(models.Model):
         
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
     OC_status = fields.Selection([
-        ('a', 'Nothing to Bill'),
-        ('b', 'Waiting Bills'),
-        ('c', 'Fully Billed'),
+        ('no', 'Nothing to Bill'),
+        ('to invoice', 'Waiting Bills'),
+        ('invoiced', 'Fully Billed'),
         
-    ], string='Billing Status', compute='_get_contado', store=True, readonly=True, copy=False, default='a')
+    ], string='Billing Status', compute='_get_contado', store=True, readonly=True, copy=False, default='no')
     
     
 
