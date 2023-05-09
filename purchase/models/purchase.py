@@ -65,7 +65,7 @@ class PurchaseOrder(models.Model):
             else:
                 order.invoice_status = 'no'
     #_get contado
-    @api.depends('name')
+    @api.depends('invoice_status')
     def _get_contado(self):
         for order in self:
             order.OC_status='contabilizado' 
