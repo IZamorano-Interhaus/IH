@@ -64,19 +64,7 @@ class PurchaseOrder(models.Model):
                 order.invoice_status = 'invoiced'
             else:
                 order.invoice_status = 'no'
-    #@api.depends('state', 'order_line.qty_to_invoice')
-    def _get_Contado(self):
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        for order in self:
-            order.OC_status = 'contabilizado'
-            """ if order.state not in ('purchase', 'draft'):
-                order.OC_status = 'sin contabilizar'
-                continue """
-            if  (order.name=='P00017'):
-                order.OC_status = 'contabilizado'
-
-            else:
-                order.OC_status = 'sin contabilizar 2'
+    #_get contado
 
 
     @api.depends('order_line.invoice_lines.move_id')
@@ -131,11 +119,7 @@ class PurchaseOrder(models.Model):
         ('invoiced', 'Fully Billed'),
         
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
-    OC_status = fields.Selection([
-        ('sin contabilizar','No contabilizado'),
-        ('sin contabilizar 2','No contabilizado 2'),
-        ('contabilizado','Contabilizado'),
-    ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True, copy=False)
+    
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
         help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
