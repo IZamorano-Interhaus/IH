@@ -67,13 +67,15 @@ class PurchaseOrder(models.Model):
     #_get contado
     @api.depends('name')
     def _get_contado(self):
-  
         for order in self:
             order.OC_status='contabilizado' 
             if (order.name=='P00017'):
                 order.OC_status='contabilizado'
+                raise TypeError("Order = P00017")
             else:
-                order.OC_status='sin contabilizar' 
+                order.OC_status='sin contabilizar'
+        raise TypeError("Hola mundo")
+         
 
 
     @api.depends('order_line.invoice_lines.move_id')
