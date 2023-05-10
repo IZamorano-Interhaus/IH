@@ -502,7 +502,7 @@ class PurchaseOrder(models.Model):
                 order.message_subscribe([order.partner_id.id])
             for move in self:
                 if any(
-                    move.env.ref['account_move.ref'].browse(self.partner_ref.address_get(['invoice'])['invoice'])!=order.name
+                    move.env.ref['account_move.ref']!=order.name
                 ):
                     self.write({
                         
