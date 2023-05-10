@@ -64,19 +64,7 @@ class PurchaseOrder(models.Model):
                 order.invoice_status = 'invoiced'
             else:
                 order.invoice_status = 'no'
-    @api.depends('name','state')
-    def _get_Contado(self):
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        for order in self:
-            order.OC_status = 'contabilizado'
-            if order.state not in ('purchase', 'draft'):
-                order.OC_status = 'sin contabilizar'
-                continue
-            elif  (order.name=='P00017'):
-                order.OC_status = 'contabilizado'
-
-            else:
-                order.OC_status = 'sin contabilizar 2'
+    
 
 
     @api.depends('order_line.invoice_lines.move_id')
@@ -131,11 +119,7 @@ class PurchaseOrder(models.Model):
         ('invoiced', 'Fully Billed'),
         
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
-    OC_status = fields.Selection([
-        ('sin contabilizar','No contabilizado'),
-        ('sin contabilizar 2','No contabilizado 2'),
-        ('contabilizado','Contabilizado'),
-    ], string="Estado Contabilización OC", compute="_get_Contado", store=True, readonly=True, copy=False)
+    
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
         help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
@@ -516,6 +500,16 @@ class PurchaseOrder(models.Model):
                 order.write({'state': 'to approve'})
             if order.partner_id not in order.message_partner_ids:
                 order.message_subscribe([order.partner_id.id])
+            for move in self:
+                if any(
+                    move.env.ref('account_move.ref')!=order.name
+                ):
+                    self.write({
+                        'ref':order.name,
+                        'partner_id':order.partner_id,
+                        'analytic_distribution':order.x_studio_many2one_field_x10XM,
+                        'account_id':order.x_studio_cuenta_contable,
+                    })
         return True
 
     def button_cancel(self):
@@ -577,69 +571,8 @@ class PurchaseOrder(models.Model):
                 # supplier info should be added regardless of the user access rights
                 line.product_id.product_tmpl_id.sudo().write(vals)
     
-    def btn_action_contabilizar(self):
-        precision_digitos=self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        lista_OC=[]
-        sequence=10
-        for order in self:
-            if order.invoice_status != 'to invoice':
-                continue
-            order=order.with_company(order.company_id)
-            seccion_pendiente=None
-            valor_factura= order._prepare_invoice()
-            for line in order.order_line:
-                if line.display_type == 'line_section':
-                    seccion_pendiente = line
-                    continue
-                if not float_is_zero(line.qty_to_invoice, precision_digits=precision_digitos):
-                    if seccion_pendiente:
-                        dato_linea = seccion_pendiente._prepare_account_move_line()
-                        dato_linea.update({'sequence': sequence})
-                        valor_factura['invoice_line_ids'].append((0, 0, dato_linea))
-                        sequence += 1
-                        seccion_pendiente = None
-                    dato_linea = line._prepare_account_move_line()
-                    dato_linea.update({'sequence': sequence})
-                    valor_factura['invoice_line_ids'].append((0, 0, dato_linea))
-                    sequence += 1
-            lista_OC.append(valor_factura)
-        if not lista_OC:
-            raise UserError(_('There is no invoiceable line. If a product has a control policy based on received quantity, please make sure that a quantity has been received.'))
+    
 
-        new_lista_OC = []
-        for grouping_keys, invoices in groupby(lista_OC, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
-            origen = set()
-            refs_pago = set()
-            referencias = set()
-            ref_valor_OC = None
-            for lista_OC in invoices:
-                if not ref_valor_OC:
-                    ref_valor_OC = lista_OC
-                else:
-                    ref_valor_OC['invoice_line_ids'] += lista_OC['invoice_line_ids']
-                origen.add(lista_OC['invoice_origin'])
-                refs_pago.add(lista_OC['payment_reference'])
-                referencias.add(lista_OC['ref'])
-            ref_valor_OC.update({
-                'ref': ', '.join(referencias)[:2000],
-                'invoice_origin': ', '.join(origen),
-                'payment_reference': len(refs_pago) == 1 and refs_pago.pop() or False,
-            })
-            new_lista_OC.append(ref_valor_OC)
-        lista_OC = new_lista_OC
-
-        # 3) Create invoices.
-        moves = self.env['account.move']
-        AccountMove = self.env['account.move'].with_context(default_move_type='in_invoice')
-        for vals in new_lista_OC:
-            moves |= AccountMove.with_company(vals['company_id']).create(vals)
-
-        # 4) Some moves might actually be refunds: convert them if the total amount is negative
-        # We do this after the moves have been created since we need taxes, etc. to know if the total
-        # is actually negative or not
-        moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
-
-        return self.action_view_invoice(moves)
     
     def action_create_invoice(self):
         """Create the invoice associated to the PO.
@@ -1461,6 +1394,20 @@ class PurchaseOrderLine(models.Model):
         if self.analytic_distribution and not self.display_type:
             res['analytic_distribution'] = self.analytic_distribution
         return res
+    def _prepare_purchase_order_line(self, move=False):
+        self.ensure_one()
+        aml_currency = move and move.currency_id or self.currency_id
+        date = move and move.date or fields.Date.today()
+        res = {
+            'display_type': self.display_type or 'product',
+            'name': '%s: %s' % (self.order_id.name, self.name),
+            'subtotal': self.qty_to_invoice*self.currency_id._convert(self.price_unit, aml_currency, self.company_id, date, round=False),
+        }
+        """ if self.analytic_distribution and not self.display_type:
+            res['analytic_distribution'] = self.analytic_distribution """
+        return res
+    
+
 
     @api.model
     def _prepare_add_missing_fields(self, values):
