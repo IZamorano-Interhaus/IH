@@ -505,7 +505,7 @@ class PurchaseOrder(models.Model):
                     move.env('account.move')!=order.name
                 ):
                     self.write({
-                        'move_type':self._context.get('default_move_type','in invoice'),
+                        
                         'ref':order.name,
                         'partner_id':order.partner_id,
                         'analytic_distribution':order.x_studio_many2one_field_x10XM,
