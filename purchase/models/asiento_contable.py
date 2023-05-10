@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+from datetime import datetime, time
+from dateutil.relativedelta import relativedelta
 
+from markupsafe import escape, Markup
+from pytz import timezone, UTC
+from werkzeug.urls import url_encode
 
 from odoo import api, fields, models, _
 from odoo.osv import expression
@@ -11,7 +16,7 @@ from odoo.exceptions import UserError, ValidationError
 
 class AsientoContable(models.Model):
     _name = "asiento.contable"
-    _inherit = ['purchase.order', 'purchase.order.line', 'account.move','account.move.line']
+    _inherit = ['purchase.order', 'purchase.order.line', 'account.move.line']
     _description = "Asiento contable"
     _rec_names_search = ['name', 'partner_ref']
     _order = 'priority desc, id desc'
