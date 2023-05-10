@@ -500,22 +500,7 @@ class PurchaseOrder(models.Model):
                 order.write({'state': 'to approve'})
             if order.partner_id not in order.message_partner_ids:
                 order.message_subscribe([order.partner_id.id])
-            data_OC = {
-                'ref':None,
-                'partner_id':None,
-            }
-            """ for move in self:
-                if any(
-                    move.env['account.account_move.ref']!=order.name
-                ):
-                    self.write({
-                        
-                        'ref':order.name,
-                        'partner_id':order.partner_id,
-                        'analytic_distribution':order.x_studio_many2one_field_x10XM,
-                        'account_id':order.x_studio_cuenta_contable,
-                    }) """
-            return data_OC
+            
         return True
 
     def button_cancel(self):
@@ -577,7 +562,50 @@ class PurchaseOrder(models.Model):
                 # supplier info should be added regardless of the user access rights
                 line.product_id.product_tmpl_id.sudo().write(vals)
     
-    
+    @api.depends('name')
+    def draft_asiento(self,name):
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        lista_contable=[]
+        for order in self:
+            invoice_vals = None
+            ref= order.name
+            for line in order.order_line:
+                    if line.display_type == 'line_section':
+                        pending_section = line
+                        continue
+                    if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                        if pending_section:
+                            line_vals = pending_section._prepare_account_move_line()
+                            line_vals.update({'sequence': sequence})
+                            invoice_vals['invoice_line_ids'].append((0, 0, line_vals))
+                            sequence += 1
+                            pending_section = None
+                        line_vals = line._prepare_account_move_line()
+                        line_vals.update({'sequence': sequence})
+                        invoice_vals['invoice_line_ids'].append((0, 0, line_vals))
+                        sequence += 1
+                #lista_contable.append(ref)
+            data_OC = {
+                    'ref':order.name,
+                }
+        """ 
+        for move in self:
+            if any(
+                move.env['account.account_move.ref']!=order.name
+            ):
+                self.write({
+                    
+                    'ref':order.name,
+                    'partner_id':order.partner_id,
+                    'analytic_distribution':order.x_studio_many2one_field_x10XM,
+                    'account_id':order.x_studio_cuenta_contable,
+                }) 
+            """
+        moves = self.env['account.move']
+        asiento = self.env['account.move'].with_context(default_move_type='in_invoice')
+        for solicitud in self:
+            moves |= asiento.with_company(solicitud['company_id']).create(solicitud)
+        return data_OC
 
     
     def action_create_invoice(self):
@@ -652,6 +680,8 @@ class PurchaseOrder(models.Model):
         moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
 
         return self.action_view_invoice(moves)
+
+    # def prepare draft, obtiene ref, analitico, centro de negocio
 
     def _prepare_invoice(self):
         """Prepare the dict of values to create the new invoice for a purchase order.
@@ -1495,3 +1525,4 @@ class PurchaseOrderLine(models.Model):
                 'business_domain': 'purchase_order',
                 'company_id': line.company_id.id,
             })
+
