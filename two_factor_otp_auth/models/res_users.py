@@ -31,7 +31,7 @@ class ResUsers(models.Model):
         inverse="_inverse_enable_2fa",
     )
     secret_code_2fa = fields.Char(
-        string="Two Factor Authentication Secret Code",
+        string="Two Factor Authentication Codigo Secreto",
         copy=False,
     )
     qr_image_2fa = fields.Binary(
