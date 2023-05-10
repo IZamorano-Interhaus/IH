@@ -16,7 +16,7 @@ from odoo.exceptions import UserError, ValidationError
 
 class AsientoContable(models.Model):
     _name = "asiento.contable"
-    _inherit = ['purchase.order', 'purchase.order.line', 'account.move.line']
+    _inherit = ['purchase.order', 'purchase.order.line']
     _description = "Asiento contable"
     _rec_names_search = ['name', 'partner_ref']
     _order = 'priority desc, id desc'
