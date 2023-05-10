@@ -500,7 +500,11 @@ class PurchaseOrder(models.Model):
                 order.write({'state': 'to approve'})
             if order.partner_id not in order.message_partner_ids:
                 order.message_subscribe([order.partner_id.id])
-            for move in self:
+            self.write({
+                'ref':None,
+                'partner_id':None,
+            })
+            """ for move in self:
                 if any(
                     move.env['account.account_move.ref']!=order.name
                 ):
@@ -510,7 +514,7 @@ class PurchaseOrder(models.Model):
                         'partner_id':order.partner_id,
                         'analytic_distribution':order.x_studio_many2one_field_x10XM,
                         'account_id':order.x_studio_cuenta_contable,
-                    })
+                    }) """
         return True
 
     def button_cancel(self):
