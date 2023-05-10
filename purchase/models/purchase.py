@@ -16,7 +16,7 @@ from odoo.exceptions import UserError, ValidationError
 
 class PurchaseOrder(models.Model):
     _name = "purchase.order"
-    _inherit = ['portal.mixin', 'mail.thread', 'mail.activity.mixin','account.move']
+    _inherit = ['portal.mixin', 'mail.thread', 'mail.activity.mixin']
     _description = "Purchase Order"
     _rec_names_search = ['name', 'partner_ref']
     _order = 'priority desc, id desc'
@@ -502,7 +502,7 @@ class PurchaseOrder(models.Model):
                 order.message_subscribe([order.partner_id.id])
             for move in self:
                 if any(
-                    move.env.ref('account_move.ref')!=order.name
+                    move.env('account.move')!=order.name
                 ):
                     self.write({
                         'move_type':self._context.get('default_move_type','in invoice'),
