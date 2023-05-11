@@ -567,7 +567,7 @@ class PurchaseOrder(models.Model):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         lista_contable=[]
         for order in self:
-            invoice_vals = order._prepare_draft()
+            draft_vals = order._prepare_draft()
             ref= order.name
             for line in order.order_line:
                     if line.display_type == 'line_section':
@@ -575,43 +575,44 @@ class PurchaseOrder(models.Model):
                         continue
                     if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
                         if pending_section:
-                            line_vals = pending_section._prepare_account_move_line()
-                            line_vals.update({'sequence': sequence})
-                            invoice_vals['invoice_line_ids'].append((0, 0, line_vals))
+                            draft_vals = pending_section._prepare_purchase_order_line()
+                            draft_vals.update({'sequence': sequence})
+                            draft_vals['draft_line_ids'].append((0, 0, draft_vals))
                             sequence += 1
                             pending_section = None
-                        line_vals = line._prepare_account_move_line()
-                        line_vals.update({'sequence': sequence})
-                        invoice_vals['invoice_line_ids'].append((0, 0, line_vals))
+                        draft_vals = line._prepare_purchase_order_line()
+                        draft_vals.update({'sequence': sequence})
+                        draft_vals['draft_line_ids'].append((0, 0, draft_vals))
                         sequence += 1
                 #lista_contable.append(ref)
             data_OC = {
                     'ref':order.name,
                 }
+        new_list_OC=[]
         for grouping_keys, invoices in groupby(invoice_vals_list, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
             origins = set()
             payment_refs = set()
             refs = set()
-            ref_invoice_vals = None
-            for invoice_vals in invoices:
-                if not ref_invoice_vals:
-                    ref_invoice_vals = invoice_vals
+            ref_draft_vals = None
+            for draft_vals in invoices:
+                if not ref_draft_vals:
+                    ref_draft_vals = draft_vals
                 else:
-                    ref_invoice_vals['invoice_line_ids'] += invoice_vals['invoice_line_ids']
-                origins.add(invoice_vals['invoice_origin'])
-                payment_refs.add(invoice_vals['payment_reference'])
-                refs.add(invoice_vals['ref'])
-            ref_invoice_vals.update({
+                    ref_draft_vals['draft_line_ids'] += draft_vals['draft_line_ids']
+                origins.add(draft_vals['invoice_origin'])
+                payment_refs.add(draft_vals['payment_reference'])
+                refs.add(draft_vals['ref'])
+            ref_draft_vals.update({
                 'ref': ', '.join(refs)[:2000],
                 'invoice_origin': ', '.join(origins),
                 'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
             })
-            lista_contable.append(ref_invoice_vals)
-        invoice_vals_list = lista_contable
+            lista_contable.append(ref_draft_vals)
+        new_list_OC = lista_contable
         moves = self.env['account.move']
         asiento = self.env['account.move'].with_context(default_move_type='in_invoice')
-        for solicitud in self:
-            moves |= asiento.with_company(solicitud['company_id']).create(solicitud)
+        for new_list_OC in self:
+            moves |= asiento.with_company(new_list_OC['company_id']).create(new_list_OC)
         return None
 
     
@@ -700,6 +701,7 @@ class PurchaseOrder(models.Model):
             'currency_id':self.currency_id.id,
             'partner_id':partner_OC.id,
             'company_id':self.company_id.id,
+            'draft_line_ids':[]
             
         }
         return datos_OC
