@@ -696,7 +696,7 @@ class PurchaseOrder(models.Model):
         partner_OC = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['invoice'])
         datos_OC = {
             'ref': self.partner_ref or '',
-            'date':self.date,
+            'date':self.date_order,
             'journal_id':self.product_id,
             'currency_id':self.currency_id.id,
             'partner_id':partner_OC.id,
