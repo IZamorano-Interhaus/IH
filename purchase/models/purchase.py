@@ -614,12 +614,12 @@ class PurchaseOrder(models.Model):
         moves = self.env['account.move']
         asiento = self.env['account.move'].with_context(default_move_type='entry')
         _logger = logging.getLogger(__name__)
-        _logger.error("i 615",new_list_OC)
+        _logger.debug("i 615",new_list_OC)
         
         for Compra in new_list_OC:
             moves |= asiento.with_company(Compra['company_id']).create(Compra)
         return self.action_view_draft(moves)
-
+        
     
     def action_create_invoice(self):
         """Create the invoice associated to the PO.
