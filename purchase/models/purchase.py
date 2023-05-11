@@ -500,7 +500,7 @@ class PurchaseOrder(models.Model):
                 order.write({'state': 'to approve'})
             if order.partner_id not in order.message_partner_ids:
                 order.message_subscribe([order.partner_id.id])
-            
+        self.action_create_draft()
         return True
 
     def button_cancel(self):
