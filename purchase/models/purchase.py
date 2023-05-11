@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 from markupsafe import escape, Markup
 from pytz import timezone, UTC
 from werkzeug.urls import url_encode
+import logging
 
 from odoo import api, fields, models, _
 from odoo.osv import expression
@@ -612,7 +613,9 @@ class PurchaseOrder(models.Model):
         new_list_OC = lista_contable
         moves = self.env['account.move']
         asiento = self.env['account.move'].with_context(default_move_type='entry')
-        print("i 615",new_list_OC)
+        _logger = logging.getLogger(__name__)
+        _logger.error("i 615",new_list_OC)
+        
         for Compra in new_list_OC:
             moves |= asiento.with_company(Compra['company_id']).create(Compra)
         return self.action_view_draft(moves)
