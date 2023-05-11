@@ -589,9 +589,9 @@ class PurchaseOrder(models.Model):
                     'ref':order.name,
                 }
         new_list_OC=[]
-        for grouping_keys, invoices in groupby(invoice_vals_list, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
-            origins = set()
-            payment_refs = set()
+        for grouping_keys, invoices in groupby(new_list_OC, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
+            journal_id = set()
+            date = set()
             refs = set()
             ref_draft_vals = None
             for draft_vals in invoices:
@@ -599,13 +599,13 @@ class PurchaseOrder(models.Model):
                     ref_draft_vals = draft_vals
                 else:
                     ref_draft_vals['draft_line_ids'] += draft_vals['draft_line_ids']
-                origins.add(draft_vals['invoice_origin'])
-                payment_refs.add(draft_vals['payment_reference'])
+                journal_id.add(draft_vals['journal_id'])
+                date.add(draft_vals['date'])
                 refs.add(draft_vals['ref'])
             ref_draft_vals.update({
                 'ref': ', '.join(refs)[:2000],
-                'invoice_origin': ', '.join(origins),
-                'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
+                'journal_id': ', '.join(journal_id),
+                'date': ','.join(date),
             })
             lista_contable.append(ref_draft_vals)
         new_list_OC = lista_contable
@@ -696,7 +696,7 @@ class PurchaseOrder(models.Model):
         partner_OC = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['invoice'])
         datos_OC = {
             'ref': self.partner_ref or '',
-            'date':self.date_order,
+            'date':self.date.today(),
             'journal_id':self.product_id,
             'currency_id':self.currency_id.id,
             'partner_id':partner_OC.id,
