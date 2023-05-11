@@ -567,7 +567,7 @@ class PurchaseOrder(models.Model):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         lista_contable=[]
         for order in self:
-            invoice_vals = None
+            invoice_vals = order._prepare_draft()
             ref= order.name
             for line in order.order_line:
                     if line.display_type == 'line_section':
@@ -692,7 +692,10 @@ class PurchaseOrder(models.Model):
             'move_type':move_type,
             'narration': self.notes,
             'currency_id':self.currency_id.id,
-            'partner_id':partner_OC.id
+            'partner_id':partner_OC.id,
+            'company_id':self.company_id.id,
+            'subtotal':self.amount_total,
+            'cuenta':self.name,
         }
         return datos_OC
     def _prepare_invoice(self):
