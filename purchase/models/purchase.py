@@ -563,7 +563,7 @@ class PurchaseOrder(models.Model):
                 line.product_id.product_tmpl_id.sudo().write(vals)
     
     @api.depends('name')
-    def draft_asiento(self,name):
+    def action_create_draft(self,name):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         lista_contable=[]
         for order in self:
@@ -588,24 +588,31 @@ class PurchaseOrder(models.Model):
             data_OC = {
                     'ref':order.name,
                 }
-        """ 
-        for move in self:
-            if any(
-                move.env['account.account_move.ref']!=order.name
-            ):
-                self.write({
-                    
-                    'ref':order.name,
-                    'partner_id':order.partner_id,
-                    'analytic_distribution':order.x_studio_many2one_field_x10XM,
-                    'account_id':order.x_studio_cuenta_contable,
-                }) 
-            """
+        for grouping_keys, invoices in groupby(invoice_vals_list, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
+            origins = set()
+            payment_refs = set()
+            refs = set()
+            ref_invoice_vals = None
+            for invoice_vals in invoices:
+                if not ref_invoice_vals:
+                    ref_invoice_vals = invoice_vals
+                else:
+                    ref_invoice_vals['invoice_line_ids'] += invoice_vals['invoice_line_ids']
+                origins.add(invoice_vals['invoice_origin'])
+                payment_refs.add(invoice_vals['payment_reference'])
+                refs.add(invoice_vals['ref'])
+            ref_invoice_vals.update({
+                'ref': ', '.join(refs)[:2000],
+                'invoice_origin': ', '.join(origins),
+                'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
+            })
+            lista_contable.append(ref_invoice_vals)
+        invoice_vals_list = lista_contable
         moves = self.env['account.move']
         asiento = self.env['account.move'].with_context(default_move_type='in_invoice')
         for solicitud in self:
             moves |= asiento.with_company(solicitud['company_id']).create(solicitud)
-        return data_OC
+        return None
 
     
     def action_create_invoice(self):
@@ -694,8 +701,7 @@ class PurchaseOrder(models.Model):
             'currency_id':self.currency_id.id,
             'partner_id':partner_OC.id,
             'company_id':self.company_id.id,
-            'subtotal':self.amount_total,
-            'cuenta':self.name,
+            
         }
         return datos_OC
     def _prepare_invoice(self):
