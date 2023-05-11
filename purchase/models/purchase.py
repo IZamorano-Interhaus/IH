@@ -610,9 +610,9 @@ class PurchaseOrder(models.Model):
             lista_contable.append(ref_draft_vals)
         new_list_OC = lista_contable
         moves = self.env['account.move']
-        asiento = self.env['account.move'].with_context(default_move_type='in_invoice')
+        asiento = self.env['account.move'].with_context(default_move_type='entry')
         for new_list_OC in self:
-            moves |= asiento.with_company(new_list_OC['company_id']).write(new_list_OC)
+            moves |= asiento.with_company(new_list_OC['company_id']).create(new_list_OC)
         return None
 
     
