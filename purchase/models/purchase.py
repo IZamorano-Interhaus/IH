@@ -612,7 +612,7 @@ class PurchaseOrder(models.Model):
         moves = self.env['account.move']
         asiento = self.env['account.move'].with_context(default_move_type='in_invoice')
         for new_list_OC in self:
-            moves |= asiento.with_company(new_list_OC['company_id']).create(new_list_OC)
+            moves |= asiento.with_company(new_list_OC['company_id']).write(new_list_OC)
         return None
 
     
