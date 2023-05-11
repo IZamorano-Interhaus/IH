@@ -588,13 +588,14 @@ class PurchaseOrder(models.Model):
             data_OC = {
                     'ref':order.name,
                 }
+
         new_list_OC=[]
-        for grouping_keys, invoices in groupby(new_list_OC, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
+        for grouping_keys, asiento_oc in groupby(new_list_OC, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
             journal_id = set()
             date = set()
             refs = set()
             ref_draft_vals = None
-            for draft_vals in invoices:
+            for draft_vals in asiento_oc:
                 if not ref_draft_vals:
                     ref_draft_vals = draft_vals
                 else:
@@ -613,7 +614,7 @@ class PurchaseOrder(models.Model):
         asiento = self.env['account.move'].with_context(default_move_type='entry')
         for Compra in new_list_OC:
             moves |= asiento.with_company(Compra['company_id']).create(Compra)
-        return self.action_view_draft()
+        return self.action_view_draft(moves)
 
     
     def action_create_invoice(self):
