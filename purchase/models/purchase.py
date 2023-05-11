@@ -683,6 +683,18 @@ class PurchaseOrder(models.Model):
 
     # def prepare draft, obtiene ref, analitico, centro de negocio
 
+    def _prepare_draft(self):
+        self.ensure_one()
+        move_type = self.context.get('default_move_type','in_invoice')
+        partner_OC = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['invoice'])
+        datos_OC = {
+            'ref': self.partner_ref or '',
+            'move_type':move_type,
+            'narration': self.notes,
+            'currency_id':self.currency_id.id,
+            'partner_id':partner_OC.id
+        }
+        return datos_OC
     def _prepare_invoice(self):
         """Prepare the dict of values to create the new invoice for a purchase order.
         """
