@@ -760,7 +760,33 @@ class PurchaseOrder(models.Model):
             result = {'type': 'ir.actions.act_window_close'}
 
         return result
+    def action_view_draft(self,purchase=False):
+        """This function returns an action that display existing vendor bills of
+        given purchase order ids. When only one found, show the vendor bill
+        immediately.
+        """
+        if not purchase:
+            # Invoice_ids may be filtered depending on the user. To ensure we get all
+            # invoices related to the purchase order, we read them in sudo to fill the
+            # cache.
+            self.invalidate_model(['invoice_ids'])
+            self.sudo()._read(['invoice_ids'])
+            purchase = self.invoice_ids
 
+        result = self.env['ir.actions.act_window']._for_xml_id('account.action_move_in_invoice_type')
+        # choose the view_mode accordingly
+        if len(purchase) > 1:
+            result['domain'] = [('id', 'in', purchase.ids)]
+        elif len(purchase) == 1:
+            res = self.env.ref('account.view_move_form', False)
+            form_view = [(res and res.id or False, 'form')]
+            if 'views' in result:
+                result['views'] = form_view + [(state, view) for state, view in result['views'] if view != 'form']
+            else:
+                result['views'] = form_view
+            result['res_id'] = purchase.id
+        else:
+            result = {'type': 'ir.actions.act_window_close'}
     @api.model
     def retrieve_dashboard(self):
         """ This function returns the values to populate the custom dashboard in
