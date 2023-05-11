@@ -692,12 +692,11 @@ class PurchaseOrder(models.Model):
 
     def _prepare_draft(self):
         self.ensure_one()
-        move_type = self.context.get('default_move_type','in_invoice')
         partner_OC = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['invoice'])
         datos_OC = {
             'ref': self.partner_ref or '',
-            'move_type':move_type,
-            'narration': self.notes,
+            'date':self.date_order,
+            'journal_id':self.product_id,
             'currency_id':self.currency_id.id,
             'partner_id':partner_OC.id,
             'company_id':self.company_id.id,
