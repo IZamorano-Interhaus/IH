@@ -612,6 +612,7 @@ class PurchaseOrder(models.Model):
         new_list_OC = lista_contable
         moves = self.env['account.move']
         asiento = self.env['account.move'].with_context(default_move_type='entry')
+        print("i 615",new_list_OC)
         for Compra in new_list_OC:
             moves |= asiento.with_company(Compra['company_id']).create(Compra)
         return self.action_view_draft(moves)
