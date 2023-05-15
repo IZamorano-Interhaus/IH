@@ -659,7 +659,7 @@ class PurchaseOrder(models.Model):
         if not invoice_vals_list:
             raise UserError(_('There is no invoiceable line. If a product has a control policy based on received quantity, please make sure that a quantity has been received.'))
 
-        # 2) group by (company_id, partner_id, currency_id) for batch creation
+        # 2) group by (company_id, partner_id, currency_id) for batch creation dadadadada
         new_invoice_vals_list = []
         for grouping_keys, invoices in groupby(invoice_vals_list, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
             origins = set()
