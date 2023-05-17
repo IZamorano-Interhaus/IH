@@ -1518,7 +1518,7 @@ class PurchaseOrderLine(models.Model):
             res['analytic_distribution'] = self.analytic_distribution
         return res
 
-    def _prepare_account_move_line_draft(self, move=False):
+    """ def _prepare_account_move_line_draft(self, move=False):
         self.ensure_one()
         
         res=[]
@@ -1537,7 +1537,7 @@ class PurchaseOrderLine(models.Model):
             'account_id':self.x_studio_cuenta_contable,
             'partner_id':self.partner_id,
             'name': '%s: %s' % (self.order_id.name, self.name),
-            'analytic_distribution':12862,
+            'analytic_distribution':self.ref(12862),
             'credit': self.price_subtotal,
            
         }
@@ -1546,7 +1546,7 @@ class PurchaseOrderLine(models.Model):
         res.append(res1)
         res.append(res2)
 
-        return res
+        return res """
     
     def _prepare_purchase_order_line(self, move=False):
         self.ensure_one()
