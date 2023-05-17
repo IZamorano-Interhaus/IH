@@ -581,7 +581,7 @@ class PurchaseOrder(models.Model):
             # Invoice values.
             draft_vals = order._prepare_draft()
             # Invoice line values (keep only necessary sections).
-            """ for line in order.order_line:
+            for line in order.order_line:
                 if line.display_type == 'line_section':
                     pending_section = line
                     continue
@@ -596,7 +596,7 @@ class PurchaseOrder(models.Model):
                     line_vals.update({'sequence': sequence})
                     draft_vals['draft_line_ids'].append((0, 0, line_vals))
                     sequence += 1
-            draft_vals_list.append(draft_vals) """
+            draft_vals_list.append(draft_vals)
 
         # 2) group by (company_id, partner_id, currency_id) for batch creation 
         new_draft_vals_list = []
@@ -1518,7 +1518,7 @@ class PurchaseOrderLine(models.Model):
             res['analytic_distribution'] = self.analytic_distribution
         return res
 
-    """ def _prepare_account_move_line_draft(self, move=False):
+    def _prepare_account_move_line_draft(self, move=False):
         self.ensure_one()
         
         res=[]
@@ -1537,7 +1537,7 @@ class PurchaseOrderLine(models.Model):
             'account_id':self.x_studio_cuenta_contable,
             'partner_id':self.partner_id,
             'name': '%s: %s' % (self.order_id.name, self.name),
-            'analytic_distribution':self.ref(12862),
+            'analytic_distribution':12862,
             'credit': self.price_subtotal,
            
         }
@@ -1546,7 +1546,7 @@ class PurchaseOrderLine(models.Model):
         res.append(res1)
         res.append(res2)
 
-        return res """
+        return res
     
     def _prepare_purchase_order_line(self, move=False):
         self.ensure_one()
