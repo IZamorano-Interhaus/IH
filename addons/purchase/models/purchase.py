@@ -611,7 +611,9 @@ class PurchaseOrder(models.Model):
             
             
             new_draft_vals_list.append(ref_draft_vals)
-        raise TypeError("linea 614",ref_draft_vals)
+        import sys
+        if sys.__stdin__.isatty():
+            import pdb; pdb.set_trace()
         draft_vals_list = new_draft_vals_list
 
         # 3) Create invoices.
