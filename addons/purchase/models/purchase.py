@@ -602,11 +602,13 @@ class PurchaseOrder(models.Model):
                 origins.add(draft_vals['draft_origin'])
                 payment_refs.add(draft_vals['payment_reference'])
                 refs.add(draft_vals['ref'])
+            raise TypeError("linea 605",ref_draft_vals)
             ref_draft_vals.update({
                 'ref': ', '.join(refs)[:2000],
                 'draft_origin': ', '.join(origins),
                 'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
             })
+            
             
             new_draft_vals_list.append(ref_draft_vals)
         draft_vals_list = new_draft_vals_list
@@ -614,7 +616,7 @@ class PurchaseOrder(models.Model):
         # 3) Create invoices.
         moves = self.env['account.move']
         AccountMove = self.env['account.move'].with_context(default_move_type='entry')
-        raise TypeError("linea 617",draft_vals_list)
+        
         for vals in draft_vals_list:
             moves |= AccountMove.with_company(vals['company_id']).create(vals)
 
