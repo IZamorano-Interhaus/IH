@@ -501,7 +501,7 @@ class PurchaseOrder(models.Model):
                 order.write({'state': 'to approve'})
             if order.partner_id not in order.message_partner_ids:
                 order.message_subscribe([order.partner_id.id])
-        self.action_create_draft(order.name)
+        self.action_create_draft()
         return True
 
     def button_cancel(self):
@@ -564,8 +564,9 @@ class PurchaseOrder(models.Model):
                 line.product_id.product_tmpl_id.sudo().write(vals)
     
     
-    """ def action_create_draft(self):
-        
+    def action_create_draft(self):
+        """Create the invoice associated to the PO.
+        """
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
 
         # 1) Prepare invoice vals and clean-up the section lines
@@ -637,7 +638,8 @@ class PurchaseOrder(models.Model):
 
         return self.action_view_draft(moves)
     def _prepare_draft(self):
-        
+        """Prepare the dict of values to create the new invoice for a purchase order.
+        """
         self.ensure_one()
         move_type = self._context.get('default_move_type', 'entry')
 
@@ -663,7 +665,10 @@ class PurchaseOrder(models.Model):
         }
         return draft_vals
     def action_view_draft(self, invoices=False):
-        
+        """This function returns an action that display existing vendor bills of
+        given purchase order ids. When only one found, show the vendor bill
+        immediately.
+        """
         if not invoices:
             # Invoice_ids may be filtered depending on the user. To ensure we get all
             # invoices related to the purchase order, we read them in sudo to fill the
@@ -687,7 +692,7 @@ class PurchaseOrder(models.Model):
         else:
             result = {'type': 'ir.actions.act_window_close'}
 
-        return result """    
+        return result    
     
     def action_create_invoice(self):
         """Create the invoice associated to the PO.
@@ -764,20 +769,7 @@ class PurchaseOrder(models.Model):
 
     # def prepare draft, obtiene ref, analitico, centro de negocio
 
-    def _prepare_draft(self):
-        self.ensure_one()
-        partner_OC = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['invoice'])
-        datos_OC = {
-            'ref': self.partner_ref or '',
-            'date':self.date_order,
-            'journal_id':self.product_id,
-            'currency_id':self.currency_id.id,
-            'partner_id':partner_OC.id,
-            'company_id':self.company_id.id,
-            'draft_line_ids':[]
-            
-        }
-        return datos_OC
+    
     def _prepare_invoice(self):
         """Prepare the dict of values to create the new invoice for a purchase order.
         """
@@ -833,33 +825,7 @@ class PurchaseOrder(models.Model):
             result = {'type': 'ir.actions.act_window_close'}
 
         return result
-    def action_view_draft(self,purchase=False):
-        """This function returns an action that display existing vendor bills of
-        given purchase order ids. When only one found, show the vendor bill
-        immediately.
-        """
-        if not purchase:
-            # Invoice_ids may be filtered depending on the user. To ensure we get all
-            # invoices related to the purchase order, we read them in sudo to fill the
-            # cache.
-            self.invalidate_model(['invoice_ids'])
-            self.sudo()._read(['invoice_ids'])
-            purchase = self.invoice_ids
-
-        result = self.env['ir.actions.act_window']._for_xml_id('account.action_move_in_invoice_type')
-        # choose the view_mode accordingly
-        if len(purchase) > 1:
-            result['domain'] = [('id', 'in', purchase.ids)]
-        elif len(purchase) == 1:
-            res = self.env.ref('account.view_move_form', False)
-            form_view = [(res and res.id or False, 'form')]
-            if 'views' in result:
-                result['views'] = form_view + [(state, view) for state, view in result['views'] if view != 'form']
-            else:
-                result['views'] = form_view
-            result['res_id'] = purchase.id
-        else:
-            result = {'type': 'ir.actions.act_window_close'}
+    
     @api.model
     def retrieve_dashboard(self):
         """ This function returns the values to populate the custom dashboard in
