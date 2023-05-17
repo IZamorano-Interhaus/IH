@@ -563,64 +563,136 @@ class PurchaseOrder(models.Model):
                 # supplier info should be added regardless of the user access rights
                 line.product_id.product_tmpl_id.sudo().write(vals)
     
-    @api.depends('name')
-    def action_create_draft(self,name):
+    
+    def action_create_draft(self):
+        """Create the invoice associated to the PO.
+        """
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        lista_contable=[]
-        for order in self:
-            draft_vals = order._prepare_draft()
-            ref= order.name
-            for line in order.order_line:
-                    if line.display_type == 'line_section':
-                        pending_section = line
-                        continue
-                    if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
-                        if pending_section:
-                            draft_vals = pending_section._prepare_purchase_order_line()
-                            draft_vals.update({'sequence': sequence})
-                            draft_vals['draft_line_ids'].append((0, 0, draft_vals))
-                            sequence += 1
-                            pending_section = None
-                        draft_vals = line._prepare_purchase_order_line()
-                        draft_vals.update({'sequence': sequence})
-                        draft_vals['draft_line_ids'].append((0, 0, draft_vals))
-                        sequence += 1
-                #lista_contable.append(ref)
-            data_OC = {
-                    'ref':order.name,
-                }
 
-        new_list_OC=[]
-        for grouping_keys, asiento_oc in groupby(new_list_OC, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
-            journal_id = set()
-            date = set()
+        # 1) Prepare invoice vals and clean-up the section lines
+        draft_vals_list = []
+        
+        for order in self:
+            if order.invoice_status != 'entry':
+                continue
+
+            order = order.with_company(order.company_id)
+            pending_section = None
+            # Invoice values.
+            draft_vals = order._prepare_draft()
+            for line in order.order_line:
+                if line.display_type == 'line_section':
+                    pending_section = line
+                    continue
+                if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                    if pending_section:
+                        line_vals = pending_section._prepare_account_move_line()
+                        line_vals.update({'sequence': sequence})
+                        draft_vals['invoice_line_ids'].append((0, 0, line_vals))
+                        sequence += 1
+                        pending_section = None
+                    line_vals = line._prepare_account_move_line()
+                    line_vals.update({'sequence': sequence})
+                    draft_vals['invoice_line_ids'].append((0, 0, line_vals))
+                    sequence += 1
+            draft_vals_list.append(draft_vals)
+
+        if not draft_vals_list:
+            raise UserError(_('There is no invoiceable line. If a product has a control policy based on received quantity, please make sure that a quantity has been received.'))
+
+
+        # 2) group by (company_id, partner_id, currency_id) for batch creation dadadadada
+        new_draft_vals_list = []
+        for grouping_keys, draft in groupby(draft_vals_list, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
+            origins = set()
+            payment_refs = set()
             refs = set()
             ref_draft_vals = None
-            for draft_vals in asiento_oc:
+            for draft_vals in draft:
                 if not ref_draft_vals:
                     ref_draft_vals = draft_vals
                 else:
-                    ref_draft_vals['draft_line_ids'] += draft_vals['draft_line_ids']
-                journal_id.add(draft_vals['journal_id'])
-                date.add(draft_vals['date'])
+                    ref_draft_vals['invoice_line_ids'] += draft_vals['invoice_line_ids']
+                origins.add(draft_vals['invoice_origin'])
+                payment_refs.add(draft_vals['payment_reference'])
                 refs.add(draft_vals['ref'])
             ref_draft_vals.update({
                 'ref': ', '.join(refs)[:2000],
-                'journal_id': ', '.join(journal_id),
-                'date': ','.join(date),
+                'invoice_origin': ', '.join(origins),
+                'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
             })
-            lista_contable.append(ref_draft_vals)
-        new_list_OC = lista_contable
+            
+            new_draft_vals_list.append(ref_draft_vals)
+        draft_vals_list = new_draft_vals_list
+
+        # 3) Create invoices.
         moves = self.env['account.move']
-        asiento = self.env['account.move'].with_context(default_move_type='entry')
-        _logger = logging.getLogger(__name__)
-        
-        _logger.info("i 615",new_list_OC)
-        
-        for Compra in new_list_OC:
-            moves |= asiento.with_company(Compra['company_id']).create(Compra)
+        AccountMove = self.env['account.move'].with_context(default_move_type='entry')
+        for vals in draft_vals_list:
+            moves |= AccountMove.with_company(vals['company_id']).create(vals)
+
+        # 4) Some moves might actually be refunds: convert them if the total amount is negative
+        # We do this after the moves have been created since we need taxes, etc. to know if the total
+        # is actually negative or not
+        moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
+
         return self.action_view_draft(moves)
-        
+    def _prepare_draft(self):
+        """Prepare the dict of values to create the new invoice for a purchase order.
+        """
+        self.ensure_one()
+        move_type = self._context.get('default_move_type', 'entry')
+
+        partner_invoice = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['draft'])
+        partner_bank_id = self.partner_id.commercial_partner_id.bank_ids.filtered_domain(['|', ('company_id', '=', False), ('company_id', '=', self.company_id.id)])[:1]
+
+        draft_vals = {
+            'ref': self.partner_ref or '',
+            'date':self.date_order,
+            'journal_id':self.product_id,
+            'move_type': move_type,
+            'narration': self.notes,
+            'currency_id': self.currency_id.id,
+            'invoice_user_id': self.user_id and self.user_id.id or self.env.user.id,
+            'partner_id': partner_invoice.id,
+            'fiscal_position_id': (self.fiscal_position_id or self.fiscal_position_id._get_fiscal_position(partner_invoice)).id,
+            'payment_reference': self.partner_ref or '',
+            'partner_bank_id': partner_bank_id.id,
+            'invoice_origin': self.name,
+            'invoice_payment_term_id': self.payment_term_id.id,
+            'invoice_line_ids': [],
+            'company_id': self.company_id.id,
+        }
+        return draft_vals
+    def action_view_draft(self, invoices=False):
+        """This function returns an action that display existing vendor bills of
+        given purchase order ids. When only one found, show the vendor bill
+        immediately.
+        """
+        if not invoices:
+            # Invoice_ids may be filtered depending on the user. To ensure we get all
+            # invoices related to the purchase order, we read them in sudo to fill the
+            # cache.
+            self.invalidate_model(['invoice_ids'])
+            self.sudo()._read(['invoice_ids'])
+            invoices = self.invoice_ids
+
+        result = self.env['ir.actions.act_window']._for_xml_id('account.action_move_in_invoice_type')
+        # choose the view_mode accordingly
+        if len(invoices) > 1:
+            result['domain'] = [('id', 'in', invoices.ids)]
+        elif len(invoices) == 1:
+            res = self.env.ref('account.view_move_form', False)
+            form_view = [(res and res.id or False, 'form')]
+            if 'views' in result:
+                result['views'] = form_view + [(state, view) for state, view in result['views'] if view != 'form']
+            else:
+                result['views'] = form_view
+            result['res_id'] = invoices.id
+        else:
+            result = {'type': 'ir.actions.act_window_close'}
+
+        return result    
     
     def action_create_invoice(self):
         """Create the invoice associated to the PO.
