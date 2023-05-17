@@ -567,6 +567,7 @@ class PurchaseOrder(models.Model):
     def action_create_draft(self):
         """Create the invoice associated to the PO.
         """
+        raise TypeError("linea 570")
         # 1) Prepare invoice vals and clean-up the section lines
         draft_vals_list = []
         sequence = 10
