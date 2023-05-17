@@ -564,9 +564,8 @@ class PurchaseOrder(models.Model):
                 line.product_id.product_tmpl_id.sudo().write(vals)
     
     
-    def action_create_draft(self):
-        """Create the invoice associated to the PO.
-        """
+    """ def action_create_draft(self):
+        
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
 
         # 1) Prepare invoice vals and clean-up the section lines
@@ -638,8 +637,7 @@ class PurchaseOrder(models.Model):
 
         return self.action_view_draft(moves)
     def _prepare_draft(self):
-        """Prepare the dict of values to create the new invoice for a purchase order.
-        """
+        
         self.ensure_one()
         move_type = self._context.get('default_move_type', 'entry')
 
@@ -665,10 +663,7 @@ class PurchaseOrder(models.Model):
         }
         return draft_vals
     def action_view_draft(self, invoices=False):
-        """This function returns an action that display existing vendor bills of
-        given purchase order ids. When only one found, show the vendor bill
-        immediately.
-        """
+        
         if not invoices:
             # Invoice_ids may be filtered depending on the user. To ensure we get all
             # invoices related to the purchase order, we read them in sudo to fill the
@@ -692,7 +687,7 @@ class PurchaseOrder(models.Model):
         else:
             result = {'type': 'ir.actions.act_window_close'}
 
-        return result    
+        return result """    
     
     def action_create_invoice(self):
         """Create the invoice associated to the PO.
