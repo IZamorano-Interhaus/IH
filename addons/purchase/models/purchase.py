@@ -567,8 +567,6 @@ class PurchaseOrder(models.Model):
     def action_create_draft(self):
         """Create the invoice associated to the PO.
         """
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-
         # 1) Prepare invoice vals and clean-up the section lines
         draft_vals_list = []
         sequence = 10
@@ -576,13 +574,10 @@ class PurchaseOrder(models.Model):
             if order.invoice_status != 'entry':
                 continue
             else:
-
                 order = order.with_company(order.company_id)
-                
                 # Invoice values.
                 draft_vals = order._prepare_draft()
                 # Invoice line values (keep only necessary sections).
-                
                 line_vals1 = self._prepare_account_move_line_draft1()
                 line_vals1.update({'sequence': sequence})
                 draft_vals['draft_line_ids'].append((0, 0, line_vals1))
@@ -591,9 +586,6 @@ class PurchaseOrder(models.Model):
                 line_vals2.update({'sequence': sequence})
                 draft_vals['draft_line_ids'].append((0, 0, line_vals2))
                 draft_vals_list.append(draft_vals)
-
-            
-
         # 2) group by (company_id, partner_id, currency_id) for batch creation 
         new_draft_vals_list = []
         for grouping_keys, draft in groupby(draft_vals_list, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
@@ -1544,8 +1536,8 @@ class PurchaseOrderLine(models.Model):
             'name': '%s: %s' % (self.order_id.name, self.name),
             'subtotal': self.qty_to_invoice*self.currency_id._convert(self.price_unit, aml_currency, self.company_id, date, round=False),
         }
-        """ if self.analytic_distribution and not self.display_type:
-            res['analytic_distribution'] = self.analytic_distribution """
+        if self.analytic_distribution and not self.display_type:
+            res['analytic_distribution'] = self.analytic_distribution
         return res
     
 
