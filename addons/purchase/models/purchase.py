@@ -582,7 +582,7 @@ class PurchaseOrder(models.Model):
             draft_vals = order._prepare_draft()
             
 
-        # 2) group by (company_id, partner_id, currency_id) for batch creation dadadadada
+        # 2) group by (company_id, partner_id, currency_id) for batch creation 
         new_draft_vals_list = []
         for grouping_keys, draft in groupby(draft_vals_list, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
             origins = set()
@@ -593,13 +593,13 @@ class PurchaseOrder(models.Model):
                 if not ref_draft_vals:
                     ref_draft_vals = draft_vals
                 else:
-                    ref_draft_vals['invoice_line_ids'] += draft_vals['invoice_line_ids']
-                origins.add(draft_vals['invoice_origin'])
+                    ref_draft_vals['draft_line_ids'] += draft_vals['draft_line_ids']
+                origins.add(draft_vals['draft_origin'])
                 payment_refs.add(draft_vals['payment_reference'])
                 refs.add(draft_vals['ref'])
             ref_draft_vals.update({
                 'ref': ', '.join(refs)[:2000],
-                'invoice_origin': ', '.join(origins),
+                'draft_origin': ', '.join(origins),
                 'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
             })
             
@@ -629,14 +629,14 @@ class PurchaseOrder(models.Model):
         autopost = self.env['account.move'].browse(self.partner_id._autopost_draft_entries())
         
         draft_vals = {
-            
-            'date':self.date_order,
-            'journal_id':self.product_id,
-            'move_type': move_type,
-            'state':self.state,
-            'auto_post':autopost,
-            
-            'currency_id': self.currency_id.id,
+            'ref': self.partner_ref or '',
+            'auto_post':autopost, #esencial 
+            'date':self.date_order, #esencial
+            'journal_id':self.product_id, #esencial
+            'move_type': move_type, #esencial
+            'state':self.state, #esencial
+            'currency_id': self.currency_id.id, #esencial
+            'price_subtotal':self.amount_untaxed,
             'draft_user_id': self.user_id and self.user_id.id or self.env.user.id,
             'partner_id': partner_draft.id,
             'fiscal_position_id': (self.fiscal_position_id or self.fiscal_position_id._get_fiscal_position(partner_draft)).id,
