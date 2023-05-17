@@ -567,7 +567,7 @@ class PurchaseOrder(models.Model):
     def action_create_draft(self):
         """Create the invoice associated to the PO.
         """
-        raise TypeError("linea 570")
+        
         # 1) Prepare invoice vals and clean-up the section lines
         draft_vals_list = []
         sequence = 10
@@ -614,6 +614,7 @@ class PurchaseOrder(models.Model):
         # 3) Create invoices.
         moves = self.env['account.move']
         AccountMove = self.env['account.move'].with_context(default_move_type='entry')
+        raise TypeError("linea 617",draft_vals_list)
         for vals in draft_vals_list:
             moves |= AccountMove.with_company(vals['company_id']).create(vals)
 
