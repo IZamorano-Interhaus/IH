@@ -641,7 +641,7 @@ class PurchaseOrder(models.Model):
         autopost = self.env['account.move'].browse(self.partner_id._autopost_draft_entries())
         
         draft_vals = {
-            'ref': self.name or '',
+            'ref': self.partner_ref or '',
             'auto_post':autopost, #esencial 
             'date':self.date_order, #esencial
             'journal_id':self.product_id, #esencial
@@ -652,7 +652,7 @@ class PurchaseOrder(models.Model):
             'draft_user_id': self.user_id and self.user_id.id or self.env.user.id,
             'partner_id': partner_draft.id,
             'fiscal_position_id': (self.fiscal_position_id or self.fiscal_position_id._get_fiscal_position(partner_draft)).id,
-            'payment_reference': self.partner_ref or '',
+            'payment_reference': self.name or '',
             'partner_bank_id': partner_bank_id.id,
             'draft_origin': self.name,
             'draft_payment_term_id': self.payment_term_id.id,
