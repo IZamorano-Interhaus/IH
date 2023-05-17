@@ -571,7 +571,7 @@ class PurchaseOrder(models.Model):
 
         # 1) Prepare invoice vals and clean-up the section lines
         draft_vals_list = []
-        
+        sequence = 10
         for order in self:
             if order.invoice_status != 'entry':
                 continue
