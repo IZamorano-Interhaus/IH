@@ -580,26 +580,7 @@ class PurchaseOrder(models.Model):
             pending_section = None
             # Invoice values.
             draft_vals = order._prepare_draft()
-            for line in order.order_line:
-                if line.display_type == 'line_section':
-                    pending_section = line
-                    continue
-                if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
-                    if pending_section:
-                        line_vals = pending_section._prepare_account_move_line()
-                        line_vals.update({'sequence': sequence})
-                        draft_vals['invoice_line_ids'].append((0, 0, line_vals))
-                        sequence += 1
-                        pending_section = None
-                    line_vals = line._prepare_account_move_line()
-                    line_vals.update({'sequence': sequence})
-                    draft_vals['invoice_line_ids'].append((0, 0, line_vals))
-                    sequence += 1
-            draft_vals_list.append(draft_vals)
-
-        if not draft_vals_list:
-            raise UserError(_('There is no invoiceable line. If a product has a control policy based on received quantity, please make sure that a quantity has been received.'))
-
+            
 
         # 2) group by (company_id, partner_id, currency_id) for batch creation dadadadada
         new_draft_vals_list = []
