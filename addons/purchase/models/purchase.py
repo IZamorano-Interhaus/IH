@@ -575,28 +575,24 @@ class PurchaseOrder(models.Model):
         for order in self:
             if order.invoice_status != 'entry':
                 continue
+            else:
 
-            order = order.with_company(order.company_id)
-            pending_section = None
-            # Invoice values.
-            draft_vals = order._prepare_draft()
-            # Invoice line values (keep only necessary sections).
-            for line in order.order_line:
-                if line.display_type == 'line_section':
-                    pending_section = line
-                    continue
-                if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
-                    if pending_section:
-                        line_vals = pending_section._prepare_account_move_line_draft()
-                        line_vals.update({'sequence': sequence})
-                        draft_vals['draft_line_ids'].append((0, 0, line_vals))
-                        sequence += 1
-                        pending_section = None
-                    line_vals = line._prepare_account_move_line_draft()
-                    line_vals.update({'sequence': sequence})
-                    draft_vals['draft_line_ids'].append((0, 0, line_vals))
-                    sequence += 1
-            draft_vals_list.append(draft_vals)
+                order = order.with_company(order.company_id)
+                
+                # Invoice values.
+                draft_vals = order._prepare_draft()
+                # Invoice line values (keep only necessary sections).
+                
+                line_vals1 = self._prepare_account_move_line_draft1()
+                line_vals1.update({'sequence': sequence})
+                draft_vals['draft_line_ids'].append((0, 0, line_vals1))
+                sequence += 1
+                line_vals2 = self._prepare_account_move_line_draft2()
+                line_vals2.update({'sequence': sequence})
+                draft_vals['draft_line_ids'].append((0, 0, line_vals2))
+                draft_vals_list.append(draft_vals)
+
+            
 
         # 2) group by (company_id, partner_id, currency_id) for batch creation 
         new_draft_vals_list = []
@@ -645,7 +641,7 @@ class PurchaseOrder(models.Model):
         autopost = self.env['account.move'].browse(self.partner_id._autopost_draft_entries())
         
         draft_vals = {
-            'ref': self.partner_ref or '',
+            'name': self.partner_ref or '',
             'auto_post':autopost, #esencial 
             'date':self.date_order, #esencial
             'journal_id':self.product_id, #esencial
@@ -1518,35 +1514,26 @@ class PurchaseOrderLine(models.Model):
             res['analytic_distribution'] = self.analytic_distribution
         return res
 
-    def _prepare_account_move_line_draft(self, move=False):
+    def _prepare_account_move_line_draft1(self):
         self.ensure_one()
-        
-        res=[]
-       
         res1 = {
             'account_id':self.x_studio_cuenta_contable,
             'partner_id':self.partner_id,
             'name': '%s: %s' % (self.order_id.name, self.name),
             'analytic_distribution':self.x_studio_many2one_field_w10XM,
             'debit': self.price_subtotal,
-           
         }
-        if self.analytic_distribution and not self.display_type:
-            res1['analytic_distribution'] = self.analytic_distribution
+        return res1
+    def _prepare_account_move_line_draft2(self):
+        self.ensure_one()
         res2 = {
             'account_id':self.x_studio_cuenta_contable,
             'partner_id':self.partner_id,
             'name': '%s: %s' % (self.order_id.name, self.name),
             'analytic_distribution':12862,
             'credit': self.price_subtotal,
-           
         }
-        if self.analytic_distribution and not self.display_type:
-            res1['analytic_distribution'] = self.analytic_distribution
-        res.append(res1)
-        res.append(res2)
-
-        return res
+        return res2
     
     def _prepare_purchase_order_line(self, move=False):
         self.ensure_one()
