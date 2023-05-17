@@ -641,7 +641,7 @@ class PurchaseOrder(models.Model):
         autopost = self.env['account.move'].browse(self.partner_id._autopost_draft_entries())
         
         draft_vals = {
-            'name': self.partner_ref or '',
+            'ref': self.name or '',
             'auto_post':autopost, #esencial 
             'date':self.date_order, #esencial
             'journal_id':self.product_id, #esencial
