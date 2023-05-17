@@ -580,7 +580,23 @@ class PurchaseOrder(models.Model):
             pending_section = None
             # Invoice values.
             draft_vals = order._prepare_draft()
-            
+            # Invoice line values (keep only necessary sections).
+            for line in order.order_line:
+                if line.display_type == 'line_section':
+                    pending_section = line
+                    continue
+                if not float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                    if pending_section:
+                        line_vals = pending_section._prepare_account_move_line_draft()
+                        line_vals.update({'sequence': sequence})
+                        draft_vals['draft_line_ids'].append((0, 0, line_vals))
+                        sequence += 1
+                        pending_section = None
+                    line_vals = line._prepare_account_move_line_draft()
+                    line_vals.update({'sequence': sequence})
+                    draft_vals['draft_line_ids'].append((0, 0, line_vals))
+                    sequence += 1
+            draft_vals_list.append(draft_vals)
 
         # 2) group by (company_id, partner_id, currency_id) for batch creation 
         new_draft_vals_list = []
@@ -1501,6 +1517,37 @@ class PurchaseOrderLine(models.Model):
         if self.analytic_distribution and not self.display_type:
             res['analytic_distribution'] = self.analytic_distribution
         return res
+
+    def _prepare_account_move_line_draft(self, move=False):
+        self.ensure_one()
+        
+        res=[]
+       
+        res1 = {
+            'account_id':self.x_studio_cuenta_contable,
+            'partner_id':self.partner_id,
+            'name': '%s: %s' % (self.order_id.name, self.name),
+            'analytic_distribution':self.x_studio_many2one_field_w10XM,
+            'debit': self.price_subtotal,
+           
+        }
+        if self.analytic_distribution and not self.display_type:
+            res1['analytic_distribution'] = self.analytic_distribution
+        res2 = {
+            'account_id':self.x_studio_cuenta_contable,
+            'partner_id':self.partner_id,
+            'name': '%s: %s' % (self.order_id.name, self.name),
+            'analytic_distribution':12862,
+            'credit': self.price_subtotal,
+           
+        }
+        if self.analytic_distribution and not self.display_type:
+            res1['analytic_distribution'] = self.analytic_distribution
+        res.append(res1)
+        res.append(res2)
+
+        return res
+    
     def _prepare_purchase_order_line(self, move=False):
         self.ensure_one()
         aml_currency = move and move.currency_id or self.currency_id
