@@ -581,7 +581,7 @@ class PurchaseOrder(models.Model):
             # Invoice values.
             draft_vals = order._prepare_draft()
             # Invoice line values (keep only necessary sections).
-            for line in order.order_line:
+            """ for line in order.order_line:
                 if line.display_type == 'line_section':
                     pending_section = line
                     continue
@@ -596,7 +596,7 @@ class PurchaseOrder(models.Model):
                     line_vals.update({'sequence': sequence})
                     draft_vals['draft_line_ids'].append((0, 0, line_vals))
                     sequence += 1
-            draft_vals_list.append(draft_vals)
+            draft_vals_list.append(draft_vals) """
 
         # 2) group by (company_id, partner_id, currency_id) for batch creation 
         new_draft_vals_list = []
