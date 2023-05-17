@@ -602,7 +602,7 @@ class PurchaseOrder(models.Model):
                 origins.add(draft_vals['draft_origin'])
                 payment_refs.add(draft_vals['payment_reference'])
                 refs.add(draft_vals['ref'])
-            raise TypeError("linea 605",ref_draft_vals)
+            
             ref_draft_vals.update({
                 'ref': ', '.join(refs)[:2000],
                 'draft_origin': ', '.join(origins),
@@ -611,6 +611,7 @@ class PurchaseOrder(models.Model):
             
             
             new_draft_vals_list.append(ref_draft_vals)
+        raise TypeError("linea 614",ref_draft_vals)
         draft_vals_list = new_draft_vals_list
 
         # 3) Create invoices.
