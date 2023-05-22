@@ -148,7 +148,12 @@ class AccountMove(models.Model):
         readonly=True,
         states={'draft': [('readonly', False)]},
     )
-
+    order_id = fields.Many2one(
+        comodel_name='purchase.order',
+        string="Orden de compra",
+        compute='_compute_company_id',inverse='_inverse_order_id',store=True,readonly=False,precompute=True,
+        index=True
+    )
     # === Payment fields === #
     payment_id = fields.Many2one(
         comodel_name='account.payment',
@@ -157,7 +162,7 @@ class AccountMove(models.Model):
         copy=False,
         check_company=True,
     )
-
+    
     # === Statement fields === #
     statement_line_id = fields.Many2one(
         comodel_name='account.bank.statement.line',
@@ -165,6 +170,7 @@ class AccountMove(models.Model):
         copy=False,
         check_company=True,
     )
+    
 
     # === Cash basis feature fields === #
     # used to keep track of the tax cash basis reconciliation. This is needed
@@ -245,6 +251,15 @@ class AccountMove(models.Model):
     # ==============================================================================================
 
     invoice_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
+        'account.move.line',
+        'move_id',
+        string='Invoice lines',
+        copy=False,
+        readonly=True,
+        domain=[('display_type', 'in', ('product', 'line_section', 'line_note'))],
+        states={'draft': [('readonly', False)]},
+    )
+    draft_line_ids = fields.One2many(  # /!\ invoice_line_ids is just a subset of line_ids.
         'account.move.line',
         'move_id',
         string='Invoice lines',
@@ -608,7 +623,12 @@ class AccountMove(models.Model):
             company_id = move.journal_id.company_id or self.env.company
             if company_id != move.company_id:
                 move.company_id = company_id
-
+    @api.depends('order_id')
+    def _compute_order_id(self):
+        for order in self:
+            order_id = order.order_id.id or self.env.order
+            if order_id != order.order_id:
+                order.order_id = order_id
     @api.depends('move_type')
     def _compute_journal_id(self):
         for record in self:
@@ -1521,13 +1541,16 @@ class AccountMove(models.Model):
                     if line.partner_id != invoice.commercial_partner_id:
                         line.partner_id = invoice.commercial_partner_id
                         line._inverse_partner_id()
-
     @api.onchange('company_id')
     def _inverse_company_id(self):
         for move in self:
             if move.journal_id.company_id != move.company_id:
                 self.env.add_to_compute(self._fields['journal_id'], move)
-
+    @api.onchange('order_id')
+    def _inverse_order_id(self):
+        for order in self:
+            if order.order_id.id != order.order_id:
+                self.env.add_to_compute(self._fields['journal_id'],order)
     @api.onchange('currency_id')
     def _inverse_currency_id(self):
         for invoice in self:

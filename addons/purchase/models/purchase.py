@@ -81,7 +81,7 @@ class PurchaseOrder(models.Model):
         'cancel': [('readonly', True)],
     }
 
-    name = fields.Char('Order Reference', required=True, index='trigram', copy=False, default='New')
+    name = fields.Char('Order Reference', required=True, index='trigram', copy=False, default='Nuevo orden de compra')
     priority = fields.Selection(
         [('0', 'Normal'), ('1', 'Urgent')], 'Priority', default='0', index=True)
     origin = fields.Char('Source Document', copy=False,
@@ -101,6 +101,7 @@ class PurchaseOrder(models.Model):
              "Otherwise, keep empty to deliver to your own company.")
     currency_id = fields.Many2one('res.currency', 'Currency', required=True, states=READONLY_STATES,
         default=lambda self: self.env.company.currency_id.id)
+    
     state = fields.Selection([
         ('draft', 'RFQ'),
         ('sent', 'RFQ Sent'),
@@ -108,10 +109,11 @@ class PurchaseOrder(models.Model):
         ('purchase', 'Purchase Order'),
         ('done', 'Locked'),
         ('cancel', 'Cancelled')
-    ], string='Status', readonly=True, index=True, copy=False, default='draft', tracking=True)
+    ], string='Status', readonly=True, index=True, copy=False, default='draft', tracking=True, store=True)
     order_line = fields.One2many('purchase.order.line', 'order_id', string='Order Lines', states={'cancel': [('readonly', True)], 'done': [('readonly', True)]}, copy=True)
     notes = fields.Html('Terms and Conditions')
-
+    
+    
     invoice_count = fields.Integer(compute="_compute_invoice", string='Bill Count', copy=False, default=0, store=True)
     invoice_ids = fields.Many2many('account.move', compute="_compute_invoice", string='Bills', copy=False, store=True)
     invoice_status = fields.Selection([
@@ -140,12 +142,13 @@ class PurchaseOrder(models.Model):
         help="Technical field to filter the available taxes depending on the fiscal country and fiscal position.")
     payment_term_id = fields.Many2one('account.payment.term', 'Payment Terms', domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]")
     incoterm_id = fields.Many2one('account.incoterms', 'Incoterm', states={'done': [('readonly', True)]}, help="International Commercial Terms are a series of predefined commercial terms used in international transactions.")
-
+    
+    
     product_id = fields.Many2one('product.product', related='order_line.product_id', string='Product')
     user_id = fields.Many2one(
         'res.users', string='Buyer', index=True, tracking=True,
         default=lambda self: self.env.user, check_company=True)
-    company_id = fields.Many2one('res.company', 'Company', required=True, index=True, states=READONLY_STATES, default=lambda self: self.env.company.id)
+    company_id = fields.Many2one('res.company', 'Company',store=True, required=True, index=True, states=READONLY_STATES, default=lambda self: self.env.company.id)
     country_code = fields.Char(related='company_id.account_fiscal_country_id.code', string="Country code")
     currency_rate = fields.Float("Currency Rate", compute='_compute_currency_rate', compute_sudo=True, store=True, readonly=True, help='Ratio between the purchase order currency and the company currency')
 
@@ -503,7 +506,6 @@ class PurchaseOrder(models.Model):
                 order.message_subscribe([order.partner_id.id])
         self.action_create_draft()
         return True
-
     def button_cancel(self):
         for order in self:
             for inv in order.invoice_ids:
@@ -570,23 +572,30 @@ class PurchaseOrder(models.Model):
         
         # 1) Prepare invoice vals and clean-up the section lines
         draft_vals_list = []
+        draft_vals = []
         sequence = 10
+        
         for order in self:
-            if order.invoice_status != 'entry':
-                continue
-            else:
-                order = order.with_company(order.company_id)
+            if order.state == 'purchase':
+                compra = order.with_company(order.company_id)
                 # Invoice values.
-                draft_vals = order._prepare_draft()
+                draft_vals = compra._prepare_draft()
                 # Invoice line values (keep only necessary sections).
-                line_vals1 = self._prepare_account_move_line_draft1()
+                
+                line_vals1=self.order_line._prepare_account_move_line_draft1()
+                
                 line_vals1.update({'sequence': sequence})
-                draft_vals['draft_line_ids'].append((0, 0, line_vals1))
+                draft_vals['draft_line_ids'].append( line_vals1)
                 sequence += 1
-                line_vals2 = self._prepare_account_move_line_draft2()
+                line_vals2=self.order_line._prepare_account_move_line_draft2() 
+                
                 line_vals2.update({'sequence': sequence})
-                draft_vals['draft_line_ids'].append((0, 0, line_vals2))
+                
+                draft_vals['draft_line_ids'].append( line_vals2)
                 draft_vals_list.append(draft_vals)
+            else:
+                continue
+        
         # 2) group by (company_id, partner_id, currency_id) for batch creation 
         new_draft_vals_list = []
         for grouping_keys, draft in groupby(draft_vals_list, key=lambda x: (x.get('company_id'), x.get('partner_id'), x.get('currency_id'))):
@@ -599,66 +608,66 @@ class PurchaseOrder(models.Model):
                     ref_draft_vals = draft_vals
                 else:
                     ref_draft_vals['draft_line_ids'] += draft_vals['draft_line_ids']
-                origins.add(draft_vals['draft_origin'])
+                origins.add(draft_vals['name'])
                 payment_refs.add(draft_vals['payment_reference'])
                 refs.add(draft_vals['ref'])
-            
             ref_draft_vals.update({
                 'ref': ', '.join(refs)[:2000],
-                'draft_origin': ', '.join(origins),
+                'name': ', '.join(origins),
                 'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
-            })
-            
-            
+            })            
             new_draft_vals_list.append(ref_draft_vals)
-        import sys
-        if sys.__stdin__.isatty():
-            import pdb; pdb.set_trace()
         draft_vals_list = new_draft_vals_list
-
         # 3) Create invoices.
         moves = self.env['account.move']
-        AccountMove = self.env['account.move'].with_context(default_move_type='entry')
+        AsientoContable = self.env['account.move.line'].with_context(default_move_type='entry')
         
-        for vals in draft_vals_list:
-            moves |= AccountMove.with_company(vals['company_id']).create(vals)
-
+        for vals in draft_vals_list:           
+            moves |= AsientoContable.with_company(vals['company_id']).create(vals)
+           
+            
         # 4) Some moves might actually be refunds: convert them if the total amount is negative
         # We do this after the moves have been created since we need taxes, etc. to know if the total
         # is actually negative or not
         moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
-
         return self.action_view_draft(moves)
     def _prepare_draft(self):
         """Prepare the dict of values to create the new invoice for a purchase order.
         """
         self.ensure_one()
         move_type = self._context.get('default_move_type', 'entry')
-        
-        partner_draft = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['draft'])
+        partner_invoice = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['invoice'])
+        partner_draft = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['invoice'])
         partner_bank_id = self.partner_id.commercial_partner_id.bank_ids.filtered_domain(['|', ('company_id', '=', False), ('company_id', '=', self.company_id.id)])[:1]
-        autopost = self.env['account.move'].browse(self.partner_id._autopost_draft_entries())
+        move_id = self.env['purchase.order.line'].browse(self.partner_id)
+        
         
         draft_vals = {
             'ref': self.partner_ref or '',
-            'auto_post':autopost, #esencial 
+            'partner_id':partner_invoice.id,
             'date':self.date_order, #esencial
             'journal_id':self.product_id, #esencial
             'move_type': move_type, #esencial
             'state':self.state, #esencial
             'currency_id': self.currency_id.id, #esencial
-            'price_subtotal':self.amount_untaxed,
-            'draft_user_id': self.user_id and self.user_id.id or self.env.user.id,
+            'amount_untaxed':self.amount_untaxed,
+            'invoice_user_id': self.user_id and self.user_id.id or self.env.user.id,
             'partner_id': partner_draft.id,
             'fiscal_position_id': (self.fiscal_position_id or self.fiscal_position_id._get_fiscal_position(partner_draft)).id,
             'payment_reference': self.name or '',
             'partner_bank_id': partner_bank_id.id,
-            'draft_origin': self.name,
-            'draft_payment_term_id': self.payment_term_id.id,
+            'name': self.name,
+            'invoice_payment_term_id': self.payment_term_id.id,
             'draft_line_ids': [],
             'company_id': self.company_id.id,
+            'move_id':move_id,
+            'account_id':self.x_studio_cuenta_contable,
+            'analytic_distribution':self.x_studio_many2one_field_w1OXM,
+            
         }
+        
         return draft_vals
+    #Revisado, devuelv datos de la solicitud de ahora
     def action_view_draft(self, invoices=False):
         """This function returns an action that display existing vendor bills of
         given purchase order ids. When only one found, show the vendor bill
@@ -686,7 +695,7 @@ class PurchaseOrder(models.Model):
             result['res_id'] = invoices.id
         else:
             result = {'type': 'ir.actions.act_window_close'}
-
+        
         return result    
     
     def action_create_invoice(self):
@@ -698,7 +707,7 @@ class PurchaseOrder(models.Model):
         invoice_vals_list = []
         sequence = 10
         for order in self:
-            if order.invoice_status != 'to invoice':
+            if order.invoice_status != 'purchase':
                 continue
 
             order = order.with_company(order.company_id)
@@ -747,6 +756,7 @@ class PurchaseOrder(models.Model):
                 'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
             })
             new_invoice_vals_list.append(ref_invoice_vals)
+        
         invoice_vals_list = new_invoice_vals_list
 
         # 3) Create invoices.
@@ -1516,23 +1526,17 @@ class PurchaseOrderLine(models.Model):
     def _prepare_account_move_line_draft1(self):
         self.ensure_one()
         res1 = {
-            'account_id':self.x_studio_cuenta_contable,
-            'partner_id':self.partner_id,
-            'name': '%s: %s' % (self.order_id.name, self.name),
-            'analytic_distribution':self.x_studio_many2one_field_w10XM,
             'debit': self.price_subtotal,
         }
+        
         return res1
     def _prepare_account_move_line_draft2(self):
         self.ensure_one()
         res2 = {
-            'account_id':self.x_studio_cuenta_contable,
-            'partner_id':self.partner_id,
-            'name': '%s: %s' % (self.order_id.name, self.name),
-            'analytic_distribution':12862,
             'credit': self.price_subtotal,
         }
         return res2
+        
     
     def _prepare_purchase_order_line(self, move=False):
         self.ensure_one()

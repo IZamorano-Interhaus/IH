@@ -41,6 +41,11 @@ class AccountMoveLine(models.Model):
         index=True,
         copy=False,
     )
+    order_id = fields.Many2one(
+        related='move_id.order_id', store=True, precompute=True,
+        index=True,
+        copy=False,
+    )
     company_id = fields.Many2one(
         related='move_id.company_id', store=True, readonly=True, precompute=True,
         index=True,
@@ -1407,6 +1412,7 @@ class AccountMoveLine(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        
         moves = self.env['account.move'].browse({vals['move_id'] for vals in vals_list})
         container = {'records': self}
         move_container = {'records': moves}
