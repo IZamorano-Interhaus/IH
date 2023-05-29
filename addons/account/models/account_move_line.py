@@ -3,6 +3,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from datetime import date, timedelta
 from functools import lru_cache
+from contextlib import ExitStack, contextmanager
 
 from odoo import api, fields, models, Command, _
 from odoo.exceptions import ValidationError, UserError
@@ -12,7 +13,7 @@ from odoo.addons.web.controllers.utils import clean_action
 
 from odoo.addons.account.models.account_move import MAX_HASH_VERSION
 
-
+EMPTY = object()
 class AccountMoveLine(models.Model):
     _name = "account.move.line"
     _inherit = "analytic.mixin"
@@ -1409,7 +1410,8 @@ class AccountMoveLine(models.Model):
         # it changes the dependencies.
         self.env.add_to_compute(self._fields['debit'], container['records'])
         self.env.add_to_compute(self._fields['credit'], container['records'])
-
+    
+        
     @api.model_create_multi
     def create(self, vals_list):
         
@@ -1428,7 +1430,73 @@ class AccountMoveLine(models.Model):
 
         lines.move_id._synchronize_business_models(['line_ids'])
         return lines
+    @api.model_create_multi
+    def createDraft(self, vals_list):
+        moves = self.move_id
+        container = {'records': self}
+        move_container = {'records': moves}
+        with moves._check_balanced(move_container),moves._sync_dynamic_lines(move_container),self._sync_invoice(container):
+            lines = super().createDraft([self._sanitize_values_draft(vals) for vals in vals_list])
+            
+            container['records'] = lines
+            
+        
+        for line in lines:
+            if line.move_id.state == 'posted':
+                line._check_tax_lock_date()
 
+        lines.move_id._synchronize_business_models(['line_ids'])
+        return lines
+    
+    @contextmanager
+    def _sync_dynamic_line(self, existing_key_fname, needed_vals_fname, needed_dirty_fname, line_type, container):
+        def existing():
+            return {
+                line[existing_key_fname]: line
+                for line in container['records'].line_ids
+                if line[existing_key_fname]
+            }
+        def needed():
+            res = {}
+            for computed_needed in container['records'].mapped(needed_vals_fname):
+                if computed_needed is False:
+                    continue  # there was an invalidation, let's hope nothing needed to be changed...
+                for key, values in computed_needed.items():
+                    if key not in res:
+                        res[key] = dict(values)
+                    else:
+                        ignore = True
+                        for fname in res[key]:
+                            if self.env['account.move.line']._fields[fname].type == 'monetary':
+                                res[key][fname] += values[fname]
+                                if res[key][fname]:
+                                    ignore = False
+                        if ignore:
+                            del res[key]
+            return res            
+    def _get_unbalanced_moves(self, container):
+        moves = container['records'].filtered(lambda move: move.line_ids)
+        if not moves:
+            return
+
+        # /!\ As this method is called in create / write, we can't make the assumption the computed stored fields
+        # are already done. Then, this query MUST NOT depend on computed stored fields.
+        # It happens as the ORM calls create() with the 'no_recompute' statement.
+        self.env['account.move.line'].flush_model(['debit', 'credit', 'balance', 'currency_id', 'move_id'])
+        self._cr.execute('''
+            SELECT line.move_id,
+                   ROUND(SUM(line.debit), currency.decimal_places) debit,
+                   ROUND(SUM(line.credit), currency.decimal_places) credit
+              FROM account_move_line line
+              JOIN account_move move ON move.id = line.move_id
+              JOIN res_company company ON company.id = move.company_id
+              JOIN res_currency currency ON currency.id = company.currency_id
+             WHERE line.move_id IN %s
+          GROUP BY line.move_id, currency.decimal_places
+            HAVING ROUND(SUM(line.balance), currency.decimal_places) != 0
+        ''', [tuple(moves.ids)])
+
+        return self._cr.fetchall()
     def write(self, vals):
         if not vals:
             return True
@@ -1617,7 +1685,24 @@ class AccountMoveLine(models.Model):
             root.id: {'id': root.id, 'display_name': root.display_name}
             for root in self.env['account.root'].browse(id for [id] in self.env.cr.fetchall())
         }
+    def action_switch_invoice_into_refund_credit_note(self):
+        if any(move.move_type not in ('in_invoice', 'out_invoice') for move in self):
+            raise ValidationError(_("This action isn't available for this document."))
 
+        for move in self:
+            move.write({
+                'move_type': move.move_type.replace('invoice', 'refund'),
+                'partner_bank_id': False,
+                'currency_id': move.currency_id.id,
+            })
+            if move.amount_total < 0:
+                move.write({
+                    'line_ids': [
+                        Command.update(line.id, {'quantity': -line.quantity})
+                        for line in move.line_ids
+                        if line.display_type == 'product'
+                    ]
+                })
     # -------------------------------------------------------------------------
     # TRACKING METHODS
     # -------------------------------------------------------------------------
