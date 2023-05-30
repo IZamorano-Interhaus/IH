@@ -11,7 +11,6 @@
 					<field name="amount_paid_percent" widget="statinfo" string="Amount Paid Percent"/>
 				</button>
 			</xpath>
-
 			<xpath expr="//field[@name='notes']" position="after" >
 			<group>
 				<group>
@@ -22,8 +21,6 @@
 				</group>
 			 </group>   
 			</xpath>
-			
 		</field>
-
 	</record>
 </odoo>
