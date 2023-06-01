@@ -10,7 +10,7 @@ class PurchaseOrderLine(models.Model):
 
     fixed_discount = fields.Float(string="Fixed Disc.", digits="Product Price", default=0.000)
 
-    discount = fields.Float(string='% Disc.', digits='Discount', default=0.000)
+    discount = fields.Float(string='% Disc. ', digits='Discount', default=0.000)
 
     @api.onchange("discount")
     def _onchange_discount(self):
