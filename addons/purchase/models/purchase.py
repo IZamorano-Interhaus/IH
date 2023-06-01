@@ -1097,9 +1097,7 @@ class PurchaseOrderLine(models.Model):
     price_subtotal = fields.Monetary(compute='_compute_amount', string='Subtotal', store=True)
     price_total = fields.Monetary(compute='_compute_amount', string='Total', store=True)
     price_tax = fields.Float(compute='_compute_amount', string='Tax', store=True)
-    fixed_discount = fields.Float(string="Fixed Disc.", digits="Product Price", default=0.000)
-
-    discount = fields.Float(string='% Disc.', digits='Discount', default=0.000)
+    
     order_id = fields.Many2one('purchase.order', string='Order Reference', index=True, required=True, ondelete='cascade')
 
     company_id = fields.Many2one('res.company', related='order_id.company_id', string='Company', store=True, readonly=True)
@@ -1140,6 +1138,9 @@ class PurchaseOrderLine(models.Model):
             "Forbidden values on non-accountable purchase order line"),
     ]
     
+    fixed_discount = fields.Float(string="Fixed Disc.", digits="Product Price", default=0.000)
+
+    discount = fields.Float(string='% Disc.', digits='Discount', default=0.000)
 
     @api.onchange("discount")
     def _onchange_discount(self):
