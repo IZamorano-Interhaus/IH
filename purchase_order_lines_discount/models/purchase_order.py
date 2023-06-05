@@ -14,7 +14,7 @@ class PurchaseOrderLine(models.Model):
     @api.onchange("x_studio_discount")
     def _onchange_discount(self):
         for line in self:
-            if line.x_studio_discount != 0:
+            if line.x_studio_discount !=0:
                 self.x_studio_fixed_discount = 0.0
                 x_studio_fixed_discount = (line.price_unit * line.product_qty) * (line.x_studio_discount / 100.0)
                 line.update({"x_studio_fixed_discount": x_studio_fixed_discount})
