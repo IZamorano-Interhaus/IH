@@ -59,3 +59,7 @@ class PurchaseOrderLine(models.Model):
             'product': self.product_id,
             'partner': self.order_id.partner_id,
         }
+class PurchaseOrder(models.Model):
+    _inherit = "purchase.order"
+    
+    
