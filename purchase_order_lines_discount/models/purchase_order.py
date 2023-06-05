@@ -8,28 +8,28 @@ from odoo import api, fields, models
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
     
-    discount = fields.Float(string='% Disc.', digits='Discount', default=0.000)
-    fixed_discount = fields.Float(string="Fixed Disc.", digits="Product Price", default=0.000)
+    x_studio_discount = fields.Float(string='% Disc.', digits='Discount', default=0.000)
+    x_studio_fixed_discount = fields.Float(string="Fixed Disc.", digits="Product Price", default=0.000)
 
-    @api.onchange("discount")
+    @api.onchange("x_studio_discount")
     def _onchange_discount(self):
         for line in self:
-            if line.discount != 0:
-                self.fixed_discount = 0.0
-                fixed_discount = (line.price_unit * line.product_qty) * (line.discount / 100.0)
+            if line.x_studio_discount != 0:
+                self.x_studio_fixed_discount = 0.0
+                fixed_discount = (line.price_unit * line.product_qty) * (line.x_studio_discount / 100.0)
                 line.update({"fixed_discount": fixed_discount})
-            if line.discount == 0:
+            if line.x_studio_discount == 0:
                 fixed_discount = 0.000
                 line.update({"fixed_discount": fixed_discount})
 
     @api.onchange("fixed_discount")
     def _onchange_fixed_discount(self):
         for line in self:
-            if line.fixed_discount != 0:
-                self.discount = 0.0
-                discount = ((self.product_qty * self.price_unit) - ((self.product_qty * self.price_unit) - self.fixed_discount)) / (self.product_qty * self.price_unit) * 100 or 0.0
+            if line.x_studio_fixed_discount != 0:
+                self.x_studio_discount = 0.0
+                discount = ((self.product_qty * self.price_unit) - ((self.product_qty * self.price_unit) - self.x_studio_fixed_discount)) / (self.product_qty * self.price_unit) * 100 or 0.0
                 line.update({"discount": discount})
-            if line.fixed_discount == 0:
+            if line.x_studio_fixed_discount == 0:
                 discount = 0.0
                 line.update({"discount": discount})
 
@@ -41,8 +41,8 @@ class PurchaseOrderLine(models.Model):
         # also introduced like in the sales module.
         self.ensure_one()
         price_unit_w_discount = self.price_unit
-        if self.discount != 0:
-            price_unit_w_discount = self.price_unit * (1 - (self.discount / 100.0))
+        if self.x_studio_discount != 0:
+            price_unit_w_discount = self.price_unit * (1 - (self.x_studio_discount / 100.0))
 
         return {
             'price_unit': price_unit_w_discount,
