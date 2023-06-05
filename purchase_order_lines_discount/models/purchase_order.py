@@ -6,6 +6,7 @@ from odoo import api, fields, models
 
 
 class PurchaseOrderLine(models.Model):
+    _name="purchase.order.form.discount"
     _inherit = "purchase.order.line"
 
     fixed_discount = fields.Float(string="Fixed Disc.",compute="_onchange_fixed_discount", digits="Product Price", default=0.000)
@@ -52,6 +53,4 @@ class PurchaseOrderLine(models.Model):
             'product': self.product_id,
             'partner': self.order_id.partner_id,
         }
-class SaleOrderLine(models.Model):
-    _inherit= 'sale.order.line'
 
