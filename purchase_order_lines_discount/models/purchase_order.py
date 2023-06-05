@@ -22,7 +22,7 @@ class PurchaseOrderLine(models.Model):
                 fixed_discount = 0.000
                 line.update({"fixed_discount": fixed_discount})
 
-    @api.onchange("fixed_discount")
+    @api.onchange("x_studio_fixed_discount")
     def _onchange_fixed_discount(self):
         for line in self:
             if line.x_studio_fixed_discount != 0:
