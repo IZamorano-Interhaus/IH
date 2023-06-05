@@ -16,22 +16,22 @@ class PurchaseOrderLine(models.Model):
         for line in self:
             if line.x_studio_discount != 0:
                 self.x_studio_fixed_discount = 0.0
-                fixed_discount = (line.price_unit * line.product_qty) * (line.x_studio_discount / 100.0)
-                line.update({"fixed_discount": fixed_discount})
+                x_studio_fixed_discount = (line.price_unit * line.product_qty) * (line.x_studio_discount / 100.0)
+                line.update({"x_studio_fixed_discount": x_studio_fixed_discount})
             if line.x_studio_discount == 0:
-                fixed_discount = 0.000
-                line.update({"fixed_discount": fixed_discount})
+                x_studio_fixed_discount = 0.000
+                line.update({"x_studio_fixed_discount": x_studio_fixed_discount})
 
     @api.onchange("x_studio_fixed_discount")
     def _onchange_fixed_discount(self):
         for line in self:
             if line.x_studio_fixed_discount != 0:
                 self.x_studio_discount = 0.0
-                discount = ((self.product_qty * self.price_unit) - ((self.product_qty * self.price_unit) - self.x_studio_fixed_discount)) / (self.product_qty * self.price_unit) * 100 or 0.0
-                line.update({"discount": discount})
+                x_studio_discount = ((self.product_qty * self.price_unit) - ((self.product_qty * self.price_unit) - self.x_studio_fixed_discount)) / (self.product_qty * self.price_unit) * 100 or 0.0
+                line.update({"x_studio_discount": x_studio_discount})
             if line.x_studio_fixed_discount == 0:
-                discount = 0.0
-                line.update({"discount": discount})
+                x_studio_discount = 0.0
+                line.update({"x_studio_discount": x_studio_discount})
 
     def _prepare_compute_all_values(self):
         # Hook method to returns the different argument values for the
