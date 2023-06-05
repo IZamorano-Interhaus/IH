@@ -8,8 +8,8 @@ from odoo import api, fields, models
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
     
-    x_studio_discount = fields.Float(string='% Disc.', digits='Discount', default=0.000)
-    x_studio_fixed_discount = fields.Float(string="Fixed Disc.", digits="Product Price", default=0.000)
+    x_studio_discount = fields.Float(string='% Disc.',compute="_onchange_discount", digits='Discount', default=0.000)
+    x_studio_fixed_discount = fields.Float(string="Fixed Disc.",compute="_onchange_fixed_discount", digits="Product Price", default=0.000)
 
     @api.onchange("x_studio_discount")
     def _onchange_discount(self):
