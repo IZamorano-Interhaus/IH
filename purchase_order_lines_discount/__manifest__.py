@@ -13,7 +13,7 @@
 
     'images': ["static/description/main_banner.png"],
     'author': "Sayed Hassan",
-    'version': '15.0',
+    'version': '16.0',
     'license': "AGPL-3",
     'category': "Purchase Management",
 
