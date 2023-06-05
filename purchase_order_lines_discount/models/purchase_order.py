@@ -6,12 +6,11 @@ from odoo import api, fields, models
 
 
 class PurchaseOrderLine(models.Model):
-    _name="purchase.order.form.discount"
     _inherit = "purchase.order.line"
 
-    fixed_discount = fields.Float(string="Fixed Disc.",compute="_onchange_fixed_discount", digits="Product Price", default=0.000)
+    fixed_discount = fields.Float(string="Fixed Disc.", digits="Product Price", default=0.000)
 
-    discount = fields.Float(string="% Disc.",compute="_onchange_discount", digits="Discount", default=0.000)
+    discount = fields.Float(string='% Disc.', digits='Discount', default=0.000)
 
     @api.onchange("discount")
     def _onchange_discount(self):
@@ -53,4 +52,3 @@ class PurchaseOrderLine(models.Model):
             'product': self.product_id,
             'partner': self.order_id.partner_id,
         }
-
