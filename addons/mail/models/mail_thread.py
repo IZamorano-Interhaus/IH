@@ -1051,7 +1051,7 @@ class MailThread(models.AbstractModel):
                 is_a_reply = False
                 rcpt_tos_valid_localparts = [to for to in rcpt_tos_valid_localparts if to in other_model_aliases.mapped('alias_name')]
 
-        if is_a_reply:
+        if is_a_reply and reply_model:
             reply_model_id = self.env['ir.model']._get_id(reply_model)
             dest_aliases = self.env['mail.alias'].search([
                 ('alias_name', 'in', rcpt_tos_localparts),
@@ -1861,7 +1861,10 @@ class MailThread(models.AbstractModel):
                     continue
                 if isinstance(content, str):
                     encoding = info and info.get('encoding')
-                    content = content.encode(encoding or 'utf-8')
+                    try:
+                        content = content.encode(encoding or "utf-8")
+                    except UnicodeEncodeError:
+                        content = content.encode("utf-8")
                 elif isinstance(content, EmailMessage):
                     content = content.as_bytes()
                 elif content is None:

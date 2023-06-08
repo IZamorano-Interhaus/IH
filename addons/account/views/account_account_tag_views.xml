@@ -3,7 +3,7 @@
     <data>
 
         <record id="account_tag_view_form" model="ir.ui.view">
-            <field name="name">Taags</field>
+            <field name="name">Tags</field>
             <field name="model">account.account.tag</field>
             <field name="arch" type="xml">
                 <form string="Tags">

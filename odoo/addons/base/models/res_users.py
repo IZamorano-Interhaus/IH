@@ -153,6 +153,13 @@ class Groups(models.Model):
     def _check_one_user_type(self):
         self.users._check_one_user_type()
 
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_settings_group(self):
+        classified = self.env['res.config.settings']._get_classified_fields()
+        for _name, _groups, implied_group in classified['group']:
+            if implied_group.id in self.ids:
+                raise ValidationError(_('You cannot delete a group linked with a settings field.'))
+
     @api.depends('category_id.name', 'name')
     def _compute_full_name(self):
         # Important: value must be stored in environment of group, not group1!
@@ -1443,6 +1450,8 @@ class GroupsView(models.Model):
                             dest_group.append(E.field(name=field_name, invisible="1", **attrs))
                         else:
                             dest_group.append(E.field(name=field_name, **attrs))
+                        # add duplicate invisible field so default values are saved on create
+                        xml0.append(E.field(name=field_name, **dict(attrs, invisible="1", groups='!base.group_no_one')))
                         group_count += 1
                     xml4.append(E.group(*left_group))
                     xml4.append(E.group(*right_group))

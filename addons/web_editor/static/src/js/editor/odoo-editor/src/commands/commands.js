@@ -471,7 +471,7 @@ export const editorCommands = {
         const end = leftLeafFirstPath(...pos1).next().value;
         const li = new Set();
         for (const node of leftLeafFirstPath(...pos2)) {
-            const cli = closestBlock(node);
+            const cli = closestElement(node,'li');
             if (
                 cli &&
                 cli.tagName == 'LI' &&
@@ -499,8 +499,9 @@ export const editorCommands = {
             if (node.nodeType === Node.TEXT_NODE && !isVisibleStr(node)) {
                 node.remove();
             } else {
-                const block = closestBlock(node);
+                let block = closestBlock(node);
                 if (!['OL', 'UL'].includes(block.tagName)) {
+                    block = block.closest('li') || block;
                     const ublock = block.closest('ol, ul');
                     ublock && getListMode(ublock) == mode ? li.add(block) : blocks.add(block);
                 }
