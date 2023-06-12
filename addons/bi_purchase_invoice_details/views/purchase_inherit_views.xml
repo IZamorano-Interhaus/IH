@@ -12,14 +12,18 @@
 				</button>
 			</xpath>
 			<xpath expr="//field[@name='notes']" position="after" >
-			<group>
+			<div class="row"><!--se agrega div para distribucion de la pagina sea estandar-->
+				<div class="col-6">
 				<group>
-					<field name="currency_id" invisible="1"/> 
-					<field name="invoiced_amount" widget='monetary' options="{'currency_field': 'currency_id'}" readonly="True" />
-					<field name="paid_amount" widget='monetary' options="{'currency_field': 'currency_id'}" readonly="True" />
-					<field name="amount_due" widget='monetary' options="{'currency_field': 'currency_id'}" readonly="True" />
+					<group>
+						<field name="currency_id" invisible="1"/> 
+						<field name="invoiced_amount" widget='monetary' options="{'currency_field': 'currency_id'}" readonly="True" />
+						<field name="paid_amount" widget='monetary' options="{'currency_field': 'currency_id'}" readonly="True" />
+						<field name="amount_due" widget='monetary' options="{'currency_field': 'currency_id'}" readonly="True" />
+					</group>
 				</group>
-			 </group>   
+				</div>
+			 </div>   
 			</xpath>
 		</field>
 	</record>
