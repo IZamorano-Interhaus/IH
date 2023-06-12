@@ -4,14 +4,12 @@
         <t t-call="web.external_layout">
             <t t-set="o" t-value="o.with_context(lang=lang)" />
             <div class="oe_structure"/>
-
             <h2 class="mt-4">
                 <span t-if="env.context.get('proforma', False) or is_pro_forma">Pro-Forma Invoice # </span>
                 <span t-elif="doc.state in ['draft','sent']">Quotation # </span>
                 <span t-else="">Order # </span>
                 <span t-field="doc.name"/>
             </h2>
-
             <div class="row mt-4 mb-4" id="informations">
                 <div t-if="doc.client_order_ref" class="col-auto col-3 mw-100 mb-2" name="informations_reference">
                     <strong>Your Reference:</strong>
@@ -33,7 +31,6 @@
                     <p class="m-0" t-field="doc.user_id"/>
                 </div>
             </div>
-
             <!-- Is there a discount on at least one line? -->
             <t t-set="lines_to_report" t-value="doc._get_order_lines_to_report()"/>
             <t t-set="display_discount" t-value="any(l.discount for l in lines_to_report)"/>
@@ -41,37 +38,31 @@
                     <table name='lines_content' class="table table-sm o_main_table">
                         <thead style="display: table-row-group">
                             <tr>
-                                <th name="th_item" class="text-start">Item</th>
+                                <th name="th_item" class="text-start">Item</th><!--nueva columna, debe traer el item escrito-->
                                 <th name="th_description" class="text-start">Descripción</th>
-                                <th name="th_uom" class="text-start">Unidad</th>
+                                <th name="th_uom" class="text-start">Unidad</th><!--se agrega la unidad de medida, debe traer la unidad de medida que viene con el precio unitario-->
                                 <th name="th_quantity" class="text-end">Cantidad</th>
                                 <th name="th_priceunit" class="text-end">Precio Unitario</th>
                                 <th name="th_subtotal" class="text-end">subtotal</th>
                             </tr>
                         </thead>
-                        <tbody class="sale_tbody">
-
+                    <tbody class="sale_tbody">
                     <t t-set="current_subtotal" t-value="0"/>
-
                     <t t-foreach="lines_to_report" t-as="line">
-
                         <t t-set="current_subtotal" t-value="current_subtotal + line.price_subtotal" groups="account.group_show_line_subtotals_tax_excluded"/>
                         <t t-set="current_subtotal" t-value="current_subtotal + line.price_total" groups="account.group_show_line_subtotals_tax_included"/>
-
                         <tr t-att-class="'bg-200 fw-bold o_line_section' if line.display_type == 'line_section' else 'fst-italic o_line_note' if line.display_type == 'line_note' else ''">
                             <t t-if="not line.display_type">
+                                <td name="td_item" class="text-end"><span t-field="line.item"></td>
                                 <td name="td_name"><span t-field="line.name"/></td>
+                                <td name="td_uom"><span t-field="line.product_uom"/></td>
                                 <td name="td_quantity" class="text-end">
                                     <span t-field="line.product_uom_qty"/>
                                     <span t-field="line.product_uom"/>
                                 </td>
                                 <td name="td_priceunit" class="text-end">
                                     <span t-field="line.price_unit"/>
-                                </td>
-                                <td t-if="display_discount" class="text-end" groups="product.group_discount_per_so_line">
-                                    <span t-field="line.discount"/>
-                                </td>
-                                
+                                </td>                               
                                 <td t-if="not line.is_downpayment" name="td_subtotal" class="text-end o_price_total">
                                     <span t-field="line.price_subtotal" groups="account.group_show_line_subtotals_tax_excluded"/>
                                     <span t-field="line.price_total" groups="account.group_show_line_subtotals_tax_included"/>
@@ -103,34 +94,28 @@
                             </tr>
                         </t>
                     </t>
-                </tbody>
-                        
+                    </tbody>                  
                     </table>
-                    
                 </div>
-            
-            </div>
-            
+            </div>    
         </t>
-        
     </template>
-
-    <template id="report_saleorder">
-    <t t-call="web.html_container">
-        <t t-foreach="docs" t-as="doc">
-            <t t-call="sale.report_saleorder_document" t-lang="doc.partner_id.lang"/>
+    <template id="report_sales_entry">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="sales_report.report_sales_document" t-lang="o.user_id.lang"/>
+            </t>
         </t>
-    </t>
-</template>
-
-<template id="report_saleorder_pro_forma">
-    <t t-call="web.html_container">
-        <t t-set="is_pro_forma" t-value="True"/>
-        <t t-set="docs" t-value="docs.with_context(proforma=True)"/>
-        <t t-foreach="docs" t-as="doc">
-            <t t-call="sale.report_saleorder_document" t-lang="doc.partner_id.lang"/>
-        </t>
-    </t>
-</template>
+    </template>
+    
+    <record id="action_report_sales_entry" model="ir.actions.report">
+        <field name="name">Nuevo Venta Impresión Custom</field>
+        <field name="model">sale.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sale.report_sales_entry</field>
+        <field name="report_file">sale.report_sales_entry</field>
+        <field name="binding_model_id" ref="sale.model_sale_order" />
+        <field name="binding_view_types">list,form</field>
+    </record>
 </odoo>
 
