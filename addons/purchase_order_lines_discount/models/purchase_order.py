@@ -35,7 +35,7 @@ class PurchaseOrderLine(models.Model):
                 line.update({"discount": discount})
 
     def _prepare_compute_all_values(self):
-        # Hook method to returns the different argument values for the
+        # Hook method to returns the different argument values for theaaaaa
         # compute_all method, due to the fact that discounts mechanism
         # is not implemented yet on the purchase orders.
         # This method should disappear as soon as this feature is
