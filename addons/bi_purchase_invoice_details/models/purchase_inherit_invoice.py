@@ -43,6 +43,6 @@ class PurchaseOrderUpdate(models.Model):
 
 	@api.depends('paid_amount','invoiced_amount')
 	def action_amount_paid(self):
-		if self.invoiced_amount :
+		if self.invoiced_amount:
 			self.amount_paid_percent = round(100 * self.paid_amount / self.invoiced_amount, 3)
 		return self.amount_paid_percent
