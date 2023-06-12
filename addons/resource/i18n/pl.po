@@ -723,7 +723,7 @@ msgstr ""
 #: code:addons/resource/models/resource.py:0
 #, python-format
 msgid "first"
-msgstr ""
+msgstr "pierwszy"
 
 #. module: resource
 #: code:addons/resource/models/resource.py:0
@@ -735,10 +735,10 @@ msgstr ""
 #: code:addons/resource/models/resource.py:0
 #, python-format
 msgid "second"
-msgstr ""
+msgstr "drugi"
 
 #. module: resource
 #: code:addons/resource/models/resource.py:0
 #, python-format
 msgid "this week"
-msgstr ""
+msgstr "ten tydzień"

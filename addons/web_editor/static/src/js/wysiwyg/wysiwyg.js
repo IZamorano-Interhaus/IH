@@ -1685,6 +1685,10 @@ const Wysiwyg = Widget.extend({
                     this.odooEditor.historyStash();
                     colorpicker = new ColorPaletteWidget(this, {
                         excluded: ['transparent_grayscale'],
+                        // TODO remove me in master: editable is just a
+                        // duplicate of $editable, should be reviewed with OWL
+                        // later anyway.
+                        editable: this.odooEditor.editable,
                         $editable: $(this.odooEditor.editable), // Our parent is the root widget, we can't retrieve the editable section from it...
                         selectedColor: selectedColor,
                         selectedTab: weUtils.isColorGradient(selectedColor) ? 'gradients' : 'theme-colors',
@@ -1721,16 +1725,16 @@ const Wysiwyg = Widget.extend({
                     colorpicker.on('color_leave', null, ev => {
                         this.odooEditor.historyRevertCurrentStep();
                     });
+                    const $childElement = $dropdown.children('.dropdown-toggle');
+                    const dropdownToggle = new Dropdown($childElement);
                     colorpicker.on('enter_key_color_colorpicker', null, () => {
-                        $dropdown.children('.dropdown-toggle').dropdown('hide');
+                        dropdownToggle.hide();
                     });
                     return colorpicker.replace(hookEl).then(() => {
                         if (oldColorpicker) {
                             oldColorpicker.destroy();
                         }
                         manualOpening = true;
-                        const $childElement = $dropdown.children('.dropdown-toggle');
-                        const dropdownToggle = new Dropdown($childElement);
                         dropdownToggle.show();
                         const $colorpicker = $dropdown.find('.colorpicker');
                         const colorpickerHeight = $colorpicker.outerHeight();
@@ -1811,21 +1815,16 @@ const Wysiwyg = Widget.extend({
         if (e && e.key === 'a' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             const selection = this.odooEditor.document.getSelection();
-            const containerSelector = '#wrap>*, [contenteditable], .oe_structure>*';
-            let $deepestParent =
-                selection ?
-                    $(selection.anchorNode).parentsUntil(containerSelector).last() :
-                    $();
-
-            if ($deepestParent.is('html')) {
-                // In case we didn't find a suitable container
-                // we need to restrict the selection inside to the editable area.
-                $deepestParent = this.$editable.find(containerSelector);
-            }
-
-            if ($deepestParent.length) {
+            const containerSelector = '#wrap>*, .oe_structure>*, [contenteditable]';
+            const container =
+                (selection &&
+                    closestElement(selection.anchorNode, containerSelector)) ||
+                // In case a suitable container could not be found then the
+                // selection is restricted inside the editable area.
+                this.$editable.find(containerSelector);
+            if (container) {
                 const range = document.createRange();
-                range.selectNodeContents($deepestParent.parent()[0]);
+                range.selectNodeContents(container);
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
@@ -2111,71 +2110,75 @@ const Wysiwyg = Widget.extend({
                     }
                 },
             },
-            {
-                category: _t('Structure'),
-                name: _t('2 columns'),
-                priority: 13,
-                description: _t('Convert into 2 columns.'),
-                fontawesome: 'fa-columns',
-                callback: () => this.odooEditor.execCommand('columnize', 2, editorOptions.insertParagraphAfterColumns),
-                isDisabled: () => {
-                    if (!this.odooEditor.isSelectionInBlockRoot()) {
-                        return true;
-                    }
-                    const anchor = this.odooEditor.document.getSelection().anchorNode;
-                    const row = closestElement(anchor, '.o_text_columns .row');
-                    return row && row.childElementCount === 2;
-                },
-            },
-            {
-                category: _t('Structure'),
-                name: _t('3 columns'),
-                priority: 12,
-                description: _t('Convert into 3 columns.'),
-                fontawesome: 'fa-columns',
-                callback: () => this.odooEditor.execCommand('columnize', 3, editorOptions.insertParagraphAfterColumns),
-                isDisabled: () => {
-                    if (!this.odooEditor.isSelectionInBlockRoot()) {
-                        return true;
-                    }
-                    const anchor = this.odooEditor.document.getSelection().anchorNode;
-                    const row = closestElement(anchor, '.o_text_columns .row');
-                    return row && row.childElementCount === 3;
-                },
-            },
-            {
-                category: _t('Structure'),
-                name: _t('4 columns'),
-                priority: 11,
-                description: _t('Convert into 4 columns.'),
-                fontawesome: 'fa-columns',
-                callback: () => this.odooEditor.execCommand('columnize', 4, editorOptions.insertParagraphAfterColumns),
-                isDisabled: () => {
-                    if (!this.odooEditor.isSelectionInBlockRoot()) {
-                        return true;
-                    }
-                    const anchor = this.odooEditor.document.getSelection().anchorNode;
-                    const row = closestElement(anchor, '.o_text_columns .row');
-                    return row && row.childElementCount === 4;
-                },
-            },
-            {
-                category: _t('Structure'),
-                name: _t('Remove columns'),
-                priority: 10,
-                description: _t('Back to one column.'),
-                fontawesome: 'fa-columns',
-                callback: () => this.odooEditor.execCommand('columnize', 0),
-                isDisabled: () => {
-                    if (!this.odooEditor.isSelectionInBlockRoot()) {
-                        return true;
-                    }
-                    const anchor = this.odooEditor.document.getSelection().anchorNode;
-                    const row = closestElement(anchor, '.o_text_columns .row');
-                    return !row;
-                },
-            },
         ];
+        if (!editorOptions.inlineStyle) {
+            commands.push(
+                {
+                    category: _t('Structure'),
+                    name: _t('2 columns'),
+                    priority: 13,
+                    description: _t('Convert into 2 columns.'),
+                    fontawesome: 'fa-columns',
+                    callback: () => this.odooEditor.execCommand('columnize', 2, editorOptions.insertParagraphAfterColumns),
+                    isDisabled: () => {
+                        if (!this.odooEditor.isSelectionInBlockRoot()) {
+                            return true;
+                        }
+                        const anchor = this.odooEditor.document.getSelection().anchorNode;
+                        const row = closestElement(anchor, '.o_text_columns .row');
+                        return row && row.childElementCount === 2;
+                    },
+                },
+                {
+                    category: _t('Structure'),
+                    name: _t('3 columns'),
+                    priority: 12,
+                    description: _t('Convert into 3 columns.'),
+                    fontawesome: 'fa-columns',
+                    callback: () => this.odooEditor.execCommand('columnize', 3, editorOptions.insertParagraphAfterColumns),
+                    isDisabled: () => {
+                        if (!this.odooEditor.isSelectionInBlockRoot()) {
+                            return true;
+                        }
+                        const anchor = this.odooEditor.document.getSelection().anchorNode;
+                        const row = closestElement(anchor, '.o_text_columns .row');
+                        return row && row.childElementCount === 3;
+                    },
+                },
+                {
+                    category: _t('Structure'),
+                    name: _t('4 columns'),
+                    priority: 11,
+                    description: _t('Convert into 4 columns.'),
+                    fontawesome: 'fa-columns',
+                    callback: () => this.odooEditor.execCommand('columnize', 4, editorOptions.insertParagraphAfterColumns),
+                    isDisabled: () => {
+                        if (!this.odooEditor.isSelectionInBlockRoot()) {
+                            return true;
+                        }
+                        const anchor = this.odooEditor.document.getSelection().anchorNode;
+                        const row = closestElement(anchor, '.o_text_columns .row');
+                        return row && row.childElementCount === 4;
+                    },
+                },
+                {
+                    category: _t('Structure'),
+                    name: _t('Remove columns'),
+                    priority: 10,
+                    description: _t('Back to one column.'),
+                    fontawesome: 'fa-columns',
+                    callback: () => this.odooEditor.execCommand('columnize', 0),
+                    isDisabled: () => {
+                        if (!this.odooEditor.isSelectionInBlockRoot()) {
+                            return true;
+                        }
+                        const anchor = this.odooEditor.document.getSelection().anchorNode;
+                        const row = closestElement(anchor, '.o_text_columns .row');
+                        return !row;
+                    },
+                },
+            );
+        }
         if (editorOptions.allowCommandLink) {
             categories.push({ name: _t('Navigation'), priority: 40 });
             commands.push(

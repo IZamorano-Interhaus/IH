@@ -6414,6 +6414,12 @@
         height: 25px;
       }
     }
+    /** Make the character a bit bigger
+    compared to its neighbor INPUT box  */
+    .o-remove-selection {
+      font-weight: bold;
+      font-size: calc(100% + 4px);
+    }
   }
 `;
     /**
@@ -6490,6 +6496,9 @@
             (_b = (_a = this.props).onSelectionChanged) === null || _b === void 0 ? void 0 : _b.call(_a, ranges);
             this.previousRanges = ranges;
         }
+        extractRanges(value) {
+            return this.props.hasSingleRange ? value.split(",")[0] : value;
+        }
         focus(rangeId) {
             this.state.isMissing = false;
             this.env.model.dispatch("FOCUS_RANGE", {
@@ -6508,15 +6517,16 @@
         }
         onInputChanged(rangeId, ev) {
             const target = ev.target;
+            const value = this.extractRanges(target.value);
             this.env.model.dispatch("CHANGE_RANGE", {
                 id: this.id,
                 rangeId,
-                value: target.value,
+                value,
             });
             target.blur();
             this.triggerChange();
         }
-        disable() {
+        confirm() {
             var _a, _b;
             this.env.model.dispatch("UNFOCUS_SELECTION_INPUT");
             const ranges = this.env.model.getters.getSelectionInputValue(this.id);
@@ -6565,7 +6575,7 @@
             return !!((_a = this.state.labelsDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(32 /* CommandResult.InvalidLabelRange */));
         }
         onUpdateDataSetsHaveTitle(ev) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 dataSetsHaveTitle: ev.target.checked,
             });
         }
@@ -6577,7 +6587,7 @@
             this.dataSeriesRanges = ranges;
         }
         onDataSeriesConfirmed() {
-            this.state.datasetDispatchResult = this.props.updateChart({
+            this.state.datasetDispatchResult = this.props.updateChart(this.props.figureId, {
                 dataSets: this.dataSeriesRanges,
             });
         }
@@ -6589,7 +6599,7 @@
             this.labelRange = ranges[0];
         }
         onLabelRangeConfirmed() {
-            this.state.labelsDispatchResult = this.props.updateChart({
+            this.state.labelsDispatchResult = this.props.updateChart(this.props.figureId, {
                 labelRange: this.labelRange,
             });
         }
@@ -6599,7 +6609,7 @@
 
     class BarConfigPanel extends LineBarPieConfigPanel {
         onUpdateStacked(ev) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 stacked: ev.target.checked,
             });
         }
@@ -8347,6 +8357,18 @@
       grid-template-columns: repeat(${ITEMS_PER_LINE}, 1fr);
       grid-gap: ${ITEM_HORIZONTAL_MARGIN * 2}px;
     }
+    .o-color-picker-toggler {
+      display: flex;
+      .o-color-picker-toggler-sign {
+        margin: auto auto;
+        width: 55%;
+        height: 55%;
+        .o-icon {
+          width: 100%;
+          height: 100%;
+        }
+      }
+    }
     .o-color-picker-line-item {
       width: ${ITEM_EDGE_LENGTH}px;
       height: ${ITEM_EDGE_LENGTH}px;
@@ -8563,17 +8585,17 @@
             this.state.fillColorTool = !this.state.fillColorTool;
         }
         updateBackgroundColor(color) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 background: color,
             });
         }
         updateTitle(ev) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 title: ev.target.value,
             });
         }
         updateSelect(attr, ev) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 [attr]: ev.target.value,
             });
         }
@@ -8606,7 +8628,7 @@
             this.dataRange = ranges[0];
         }
         updateDataRange() {
-            this.state.dataRangeDispatchResult = this.props.updateChart({
+            this.state.dataRangeDispatchResult = this.props.updateChart(this.props.figureId, {
                 dataRange: this.dataRange,
             });
         }
@@ -8676,12 +8698,12 @@
         }
         updateBackgroundColor(color) {
             this.state.openedMenu = undefined;
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 background: color,
             });
         }
         updateTitle(ev) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 title: ev.target.value,
             });
         }
@@ -8750,7 +8772,7 @@
             }
         }
         updateSectionRule(sectionRule) {
-            this.state.sectionRuleDispatchResult = this.props.updateChart({
+            this.state.sectionRuleDispatchResult = this.props.updateChart(this.props.figureId, {
                 sectionRule,
             });
         }
@@ -8770,12 +8792,12 @@
             return false;
         }
         onUpdateLabelsAsText(ev) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 labelsAsText: ev.target.checked,
             });
         }
         onUpdateStacked(ev) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 stacked: ev.target.checked,
             });
         }
@@ -8816,7 +8838,7 @@
             this.keyValue = ranges[0];
         }
         updateKeyValueRange() {
-            this.state.keyValueDispatchResult = this.props.updateChart({
+            this.state.keyValueDispatchResult = this.props.updateChart(this.props.figureId, {
                 keyValue: this.keyValue,
             });
         }
@@ -8824,12 +8846,12 @@
             this.baseline = ranges[0];
         }
         updateBaselineRange() {
-            this.state.baselineDispatchResult = this.props.updateChart({
+            this.state.baselineDispatchResult = this.props.updateChart(this.props.figureId, {
                 baseline: this.baseline,
             });
         }
         updateBaselineMode(ev) {
-            this.props.updateChart({ baselineMode: ev.target.value });
+            this.props.updateChart(this.props.figureId, { baselineMode: ev.target.value });
         }
     }
     ScorecardChartConfigPanel.template = "o-spreadsheet-ScorecardChartConfigPanel";
@@ -8849,12 +8871,12 @@
             owl.useExternalListener(window, "click", this.onClick);
         }
         updateTitle(ev) {
-            this.props.updateChart({
+            this.props.updateChart(this.props.figureId, {
                 title: ev.target.value,
             });
         }
         updateBaselineDescr(ev) {
-            this.props.updateChart({ baselineDescr: ev.target.value });
+            this.props.updateChart(this.props.figureId, { baselineDescr: ev.target.value });
         }
         openColorPicker(colorPickerId) {
             this.state.openedColorPicker = colorPickerId;
@@ -8862,13 +8884,13 @@
         setColor(color, colorPickerId) {
             switch (colorPickerId) {
                 case "backgroundColor":
-                    this.props.updateChart({ background: color });
+                    this.props.updateChart(this.props.figureId, { background: color });
                     break;
                 case "baselineColorDown":
-                    this.props.updateChart({ baselineColorDown: color });
+                    this.props.updateChart(this.props.figureId, { baselineColorDown: color });
                     break;
                 case "baselineColorUp":
-                    this.props.updateChart({ baselineColorUp: color });
+                    this.props.updateChart(this.props.figureId, { baselineColorUp: color });
                     break;
             }
             this.state.openedColorPicker = undefined;
@@ -8932,15 +8954,8 @@
   }
 `;
     class ChartPanel extends owl.Component {
-        constructor() {
-            super(...arguments);
-            this.shouldUpdateChart = true;
-        }
         get figureId() {
             return this.state.figureId;
-        }
-        get sheetId() {
-            return this.state.sheetId;
         }
         setup() {
             const selectedFigureId = this.env.model.getters.getSelectedFigureId();
@@ -8950,17 +8965,11 @@
             this.state = owl.useState({
                 panel: "configuration",
                 figureId: selectedFigureId,
-                sheetId: this.env.model.getters.getActiveSheetId(),
             });
             owl.onWillUpdateProps(() => {
                 const selectedFigureId = this.env.model.getters.getSelectedFigureId();
                 if (selectedFigureId && selectedFigureId !== this.state.figureId) {
                     this.state.figureId = selectedFigureId;
-                    this.state.sheetId = this.env.model.getters.getActiveSheetId();
-                    this.shouldUpdateChart = false;
-                }
-                else {
-                    this.shouldUpdateChart = true;
                 }
                 if (!this.env.model.getters.isChartDefined(this.figureId)) {
                     this.props.onCloseSidePanel();
@@ -8968,8 +8977,8 @@
                 }
             });
         }
-        updateChart(updateDefinition) {
-            if (!this.shouldUpdateChart) {
+        updateChart(figureId, updateDefinition) {
+            if (figureId !== this.figureId) {
                 return;
             }
             const definition = {
@@ -8978,8 +8987,8 @@
             };
             return this.env.model.dispatch("UPDATE_CHART", {
                 definition,
-                id: this.figureId,
-                sheetId: this.sheetId,
+                id: figureId,
+                sheetId: this.env.model.getters.getFigureSheetId(figureId),
             });
         }
         onTypeChange(type) {
@@ -8991,7 +9000,7 @@
             this.env.model.dispatch("UPDATE_CHART", {
                 definition,
                 id: this.figureId,
-                sheetId: this.sheetId,
+                sheetId: this.env.model.getters.getFigureSheetId(this.figureId),
             });
         }
         get chartPanel() {
@@ -32478,7 +32487,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     // magic "empty" value
                     // Returning {value: null} instead of undefined will ensure that we don't
                     // fall back on the default value of the argument provided to the formula's compute function
-                    return { value: null };
+                    return { value: null, format: cell === null || cell === void 0 ? void 0 : cell.format };
                 }
                 return getEvaluatedCell(cell);
             }
@@ -34893,6 +34902,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
      */
     class SelectionInputPlugin extends UIPlugin {
         constructor(getters, state, dispatch, config, selection, initialRanges, inputHasSingleRange) {
+            if (inputHasSingleRange && initialRanges.length > 1) {
+                throw new Error("Input with a single range cannot be instantiated with several range references.");
+            }
             super(getters, state, dispatch, config, selection);
             this.inputHasSingleRange = inputHasSingleRange;
             this.ranges = [];
@@ -34912,6 +34924,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             switch (cmd.type) {
                 case "ADD_EMPTY_RANGE":
                     if (this.inputHasSingleRange && this.ranges.length === 1) {
+                        return 29 /* CommandResult.MaximumRangesReached */;
+                    }
+                    break;
+                case "CHANGE_RANGE":
+                    if (this.inputHasSingleRange && cmd.value.split(",").length > 1) {
                         return 29 /* CommandResult.MaximumRangesReached */;
                     }
                     break;
@@ -35728,13 +35745,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         loadInitialMessages(messages) {
             this.isReplayingInitialRevisions = true;
-            this.on("unexpected-revision-id", this, ({ revisionId }) => {
-                throw new Error(`The spreadsheet could not be loaded. Revision ${revisionId} is corrupted.`);
-            });
             for (const message of messages) {
                 this.onMessageReceived(message);
             }
-            this.off("unexpected-revision-id", this);
             this.isReplayingInitialRevisions = false;
         }
         /**
@@ -35806,6 +35819,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onMessageReceived(message) {
             if (this.isAlreadyProcessed(message))
                 return;
+            if (this.isWrongServerRevisionId(message)) {
+                this.trigger("unexpected-revision-id");
+                return;
+            }
             switch (message.type) {
                 case "CLIENT_MOVED":
                     this.onClientMoved(message);
@@ -35832,10 +35849,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     });
                     break;
                 case "REMOTE_REVISION":
-                    if (message.serverRevisionId !== this.serverRevisionId) {
-                        this.trigger("unexpected-revision-id", { revisionId: message.serverRevisionId });
-                        return;
-                    }
                     const { clientId, commands } = message;
                     const revision = new Revision(message.nextRevisionId, clientId, commands);
                     if (revision.clientId !== this.clientId) {
@@ -35963,6 +35976,17 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 case "REVISION_REDONE":
                 case "REVISION_UNDONE":
                     return this.processedRevisions.has(message.nextRevisionId);
+                default:
+                    return false;
+            }
+        }
+        isWrongServerRevisionId(message) {
+            switch (message.type) {
+                case "REMOTE_REVISION":
+                case "REVISION_REDONE":
+                case "REVISION_UNDONE":
+                case "SNAPSHOT_CREATED":
+                    return message.serverRevisionId !== this.serverRevisionId;
                 default:
                     return false;
             }
@@ -37930,7 +37954,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         color: dimgrey;
       }
       .o-sidePanelClose {
-        font-size: 1.5rem;
         padding: 5px 10px;
         cursor: pointer;
         &:hover {
@@ -42778,9 +42801,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
 
-    __info__.version = '16.0.9';
-    __info__.date = '2023-04-28T12:35:06.357Z';
-    __info__.hash = 'e06ca83';
+    __info__.version = '16.0.12';
+    __info__.date = '2023-06-02T10:15:35.826Z';
+    __info__.hash = '9718465';
 
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
