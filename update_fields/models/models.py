@@ -9,3 +9,9 @@ class update_fields(models.Model):
     state = fields.Selection(
         selection_add=[("posted", "Contabilizado")]
     )
+class purchaseorder(models.Model):
+    _inherit = 'purchase.order'
+
+    state = fields.Selection(
+        selection_add=[("posted", "Contabilizado"),("cancel","Cancelado")]
+    )

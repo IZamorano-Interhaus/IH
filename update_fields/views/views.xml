@@ -1,12 +1,22 @@
 <?xml version="1.0"?>
 <odoo>
 	<record id="view_order_form_inherit_purchase_invoice" model="ir.ui.view">
-		<field name="name">purchase.order.form.purchaseinvoice.module</field>
+		<field name="name">account.move.form.update</field>
 		<field name="model">account.move</field>
 		<field name="inherit_id" ref="account.view_in_invoice_bill_tree"/>
 		<field name="arch" type="xml">
 			<xpath expr="//field[@name='state']" position="replace" >
 				<field name="state"/>
+			</xpath>
+		</field>
+	</record>
+    <record id="view_order_form_inherit_purchase_invoice" model="ir.ui.view">
+		<field name="name">purchase.order.form.update</field>
+		<field name="model">purchase.order</field>
+		<field name="inherit_id" ref="purchase.purchase_order_kpis_tree"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='state']" position="replace" >
+				<field name="state" optional="show" widget="badge" decoration-success="state == 'done' or state == 'purchase'" decoration-primary="state == 'sent' or state=='to approve'" decoration-danger="state == 'cancel'" decoration-warning="state == 'approved'" decoration-info="state == 'draft'"/>
 			</xpath>
 		</field>
 	</record>
