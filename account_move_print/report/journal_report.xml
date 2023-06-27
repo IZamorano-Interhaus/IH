@@ -153,7 +153,7 @@
 
     <record id="action_report_journal_entries" model="ir.actions.report">
         <field name="name">Journal Entries</field>
-        <field name="model">account.move</field>
+        <field name="model">sale.order</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">account_move_print.report_journal_entries</field>
         <field name="report_file">account_move_print.report_journal_entries</field>
