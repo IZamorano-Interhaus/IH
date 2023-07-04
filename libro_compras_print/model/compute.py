@@ -4,11 +4,13 @@
 from odoo import api, fields, models, tools
 
 class account_move(models.Model):
-    _inherit="account.move.line"       
+    _inherit="account.move"       
 
-    afecto = fields.Float(string="afecto", compute="compute_afecto_exento")
+    
+    afecto = fields.Monetary(string="Afecto", compute="_compute_amount",currency_field='company_currency_id',)
 
-    exento = fields.Float(string="exento", compute="compute_afecto_exento")
+    exento = fields.Monetary(string="Exento", compute="_compute_amount",currency_field='company_currency_id',)
+    
     def _compute_amount(self):
         for move in self:
             total_untaxed, total_untaxed_currency = 0.0, 0.0
@@ -51,14 +53,6 @@ class account_move(models.Model):
             move.amount_total_signed = abs(total) if move.move_type == 'entry' else -total
             move.amount_residual_signed = total_residual
             move.amount_total_in_currency_signed = abs(move.amount_total) if move.move_type == 'entry' else -(sign * move.amount_total)
-    @api.depends('product_uom_qty', 'discount', 'price_unit', 'tax_id')
-    def compute_afecto_exento(self):
-        for line in self:
-            tax_results = self.env['account.tax']._compute_taxes([line._convert_to_tax_base_line_dict()])
-            totals = list(tax_results['totals'].values())[0]
-            amount_untaxed = totals['amount_untaxed']
-            amount_tax = totals['amount_tax']
-            line.update({
-                'afecto': amount_tax/0.19,
-                'exento':amount_untaxed - (amount_tax/0.19),
-            })
+            move.afecto = sign * (move.amount_tax/0.19)
+            move.exento = sign * (move.amount_untaxed-(move.amount_tax/0.19))
+    
