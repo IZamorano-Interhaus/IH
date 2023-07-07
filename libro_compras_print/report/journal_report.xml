@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <data>
+        
     <template id="report_journal_entry_document">
         <t t-call="web.external_layout">
-            <t t-set="registro" t-value="registro.with_context(lang=lang)" />
             <div class="page">
+                
+                <!--LIBRO -->
                 <h2>LIBRO DE COMPRAS</h2>
                 <div class="row">
-                    <table name='lines_content' class="table table-sm registro_main_table">
+                    <table name="lines_content" class="table table-sm registro_main_table no-page-break">
                         <thead>
                             <tr>
+                                <th name="th_type_id" class="text-left">ID</th>
                                 <th name="th_type_doc" class="text-left">Tipo de Documento</th>
                                 <th name="th_folio" class="text-left">Folio</th>
                                 <th name="th_rut" class="text-left">RUT Nº</th>
@@ -17,81 +21,113 @@
                                 <th name="th_afecto" class="text-left">Monto Afecto</th>
                                 <th name="th_exento" class="text-left">Monto Exento</th>
                                 <th name="th_total" class="text-left">Total</th>
-                                
                             </tr>
                         </thead>
                         <tbody>
-                             <t t-foreach="registro" t-as="line">
-                                <tr >
-                                    <!-- DOC TYPE-->
-                                    <td name='tb_doc_type'>
-                                        <span t-field="line.l10n_latam_document_type_id" />
-                                    </td>
+                            <t t-foreach="docs" t-as="registro">
+                                <tr>
+                                    <!-- ID -->
+                                    <td><span t-field="registro.id"/></td>
+                                    
+                                    <td><span t-field="registro.l10n_latam_document_type_id"/></td>
+                                    
+                                    <td><span t-field="registro.l10n_latam_document_number"/></td>
+                                    
+                                    <td><span t-field="registro.partner_id.vat"/></td>
+                                    
+                                    <td><span t-field="registro.partner_id.name"/></td>
+                                    
+                                    <td><span t-field="registro.invoice_date_due"/></td>
 
-                                    <!-- FOLIO-->
-                                    <td name='tb_folio'>
-                                        <span t-field="line.l10n_latam_document_number" />
-                                    </td>
+                                    <!-- AFECTO -->
+                                    <td><span t-field="registro.amount_untaxed" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
                                     
-                                    <!-- RUT-->
-                                    <td name='tb_rut'>
-                                        <span t-field="line.partner_id.vat" />
-                                    </td>
+                                    <td><span t-field="registro.amount_tax" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
                                     
-                                    <!-- PARTNER-->
-                                     <td name='tb_partner'>
-                                        <span t-field="line.partner_id.name" />
-                                    </td>
-
-                                     <!-- DATE-->
-                                    <td name='tb_date'>
-                                         <span t-field="line.invoice_date_due" />
-                                    </td>
+                                    <td><span t-field="registro.amount_total" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
                                     
-                                    <!-- AFECTO-->
-                                    <td name='tb_afect'>
-                                        <span
-                                            t-esc="line.amount_untaxed"
-                                            t-options='{"widget": "monetary", "display_currency": line.company_currency_id}'
-                                        />
-                                    </td>
-                                    
-                                    <!-- EXENTO-->
-                                    <td name='tb_exent'>
-                                        <span
-                                            t-esc="line.amount_tax"
-                                            t-options='{"widget": "monetary", "display_currency": line.company_currency_id}'
-                                        />
-                                    </td>
-                                    
-                                    <!-- TOTAL-->
-                                    <td name='tb_total'>
-                                        <span
-                                            t-esc="line.amount_total"
-                                            t-options='{"widget": "monetary", "display_currency": line.company_currency_id}'
-                                        />
-                                    </td>
                                 </tr>
                             </t>
                         </tbody>
-                        
                     </table>
-                    
                 </div>
-            
             </div>
         </t>
-        
     </template>
 
-    <template id="report_journal_entries">
+    <template id="report_summary_page">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <h2>RESUMEN LIBRO DE COMPRAS</h2>
+                <div class="row">
+                    <!-- Aquí puedes agregar el contenido de tu tabla de resumen -->
+                    <table name="lines_content" class="table table-sm registro_main_table no-page-break">
+                        
+                            <tr>
+                                <th name="th_type_doc" class="text-left">Tipo de Documento</th>
+                                <th name="th_folio" class="text-left">Cantidad de Docs x Tipo</th>
+                                <th name="th_afecto" class="text-left">Afecto</th>
+                                <th name="th_exento" class="text-left">Exento</th>
+                                <th name="th_exento" class="text-left">IVA</th>
+                                <th name="th_total" class="text-left">Total</th>
+                            </tr>
+                        
+                            <tbody t-foreach="docs" t-as="registro" t-groupby="registro.l10n_latam_document_type_id.code">
+                                <tr>
+                                    <!-- TIPO DOC -->
+                                    <td><span t-field="registro.l10n_latam_document_type_id"/></td>
+                                    
+                                    <!-- CANTIDAD -->
+                                    <td>1000</td>
+                                    
+                                    <!-- AFECTO -->
+                                    <td><span t-field="registro.afecto" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
+                                    
+                                    <!-- EXCENTO -->
+                                    <td><span t-field="registro.exento" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
+                                    
+                                    <!-- IVA -->
+                                    <td><span t-field="registro.amount_tax" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
+
+                                    <!-- TOTAL -->
+                                     <td><span t-field="registro.amount_total" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
+                                    
+                                </tr>
+                            </tbody>
+
+                        <!--
+                            <tfooter>
+                                <tr>
+                                    <td colspan="1">Total General</td>
+                                    <td>100</td>
+                                    <td>
+                                        <span t-esc="sum(registro.afecto for registro in docs)" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/>
+                                    </td>
+    
+                                    <td>
+                                        <span t-esc="sum(registro.exento for registro in docs)" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/>
+                                    </td>
+                                    
+                                   <td>
+                                        <span t-esc="sum(registro.amount_tax for registro in docs)" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/>
+                                    </td>
+                                    
+                                    <td>
+                                        <span t-esc="sum(registro.amount_total for registro in docs)" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/>
+                                    </td>
+                                </tr>
+                          </tfooter>
+                        -->
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+     <template id="report_journal_entries">
         <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="registro">
-                <t
-                    t-call="libro_compras.report_journal_entry_document"
-                    t-lang="registro.user_id.lang"
-                />
-            </t>
+             <t t-call="libro_compras.report_summary_page"/>
+            <t t-call="libro_compras.report_journal_entry_document"/>
         </t>
     </template>
 
@@ -104,4 +140,6 @@
         <field name="binding_model_id" ref="account.model_account_move" />
         <field name="binding_view_types">list,form</field>
     </record>
+    
+    </data>
 </odoo>

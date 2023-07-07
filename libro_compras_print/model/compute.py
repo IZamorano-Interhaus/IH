@@ -35,7 +35,7 @@ class account_move(models.Model):
                         total_currency += line.amount_currency
                     elif line.display_type == 'payment_term':
                         # Residual amount.
-                        total_residual += line.amount_residual
+                        total_residual += line.amount_residual 
                         total_residual_currency += line.amount_residual_currency
                 else:
                     # === Miscellaneous journal entry ===
@@ -53,6 +53,6 @@ class account_move(models.Model):
             move.amount_total_signed = abs(total) if move.move_type == 'entry' else -total
             move.amount_residual_signed = total_residual
             move.amount_total_in_currency_signed = abs(move.amount_total) if move.move_type == 'entry' else -(sign * move.amount_total)
-            move.afecto = sign * (move.amount_tax/0.19)
-            move.exento = sign * (move.amount_untaxed-(move.amount_tax/0.19))
+            move.afecto = sign * (move.amount_tax / 0.19)
+            move.exento = sign * (move.amount_untaxed - (move.amount_tax / 0.19))
     

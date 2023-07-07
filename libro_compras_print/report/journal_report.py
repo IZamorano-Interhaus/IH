@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
-
 from odoo import api, fields, models, tools
 
 from odoo.addons.account.models.account_move import PAYMENT_STATE_SELECTION
@@ -9,7 +6,7 @@ from functools import lru_cache
 
 
 class AccountInvoiceReport(models.Model):
-    _inherit = "account.invoice.report"
+    _inherit = "account.move"
 
     _depends = {
         'account.move': [
@@ -30,7 +27,7 @@ class AccountInvoiceReport(models.Model):
 
     @property
     def table_query(self):
-        return '%s %s %s' % (self.query_select(), self.query_from())
+        return '%s %s' % (self.query_select(), self.query_from())
 
     @api.model
     def query_select(self):
@@ -53,6 +50,8 @@ class AccountInvoiceReport(models.Model):
             inner join l10n_latam_document_type doc
             	on move.l10n_latam_document_type_id = doc.id
             order by move.invoice_date_due desc
-        '''
+        '''.format(
+            currency_table=self.env['res.currency']._get_query_currency_table({'multi_company': True, 'date': {'date_to': fields.Date.today()}}),
+        )
 
     
