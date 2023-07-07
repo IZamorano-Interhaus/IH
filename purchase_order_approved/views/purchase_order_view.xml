@@ -19,7 +19,7 @@
                     name="button_release"
                     type="object"
                     states="approved"
-                    string="Convert to Purchase Order"
+                    string="Convertir a Orden de Compra"
                     class="oe_highlight"
                 />
             </button>
