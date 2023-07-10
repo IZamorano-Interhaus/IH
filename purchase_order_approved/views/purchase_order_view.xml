@@ -38,7 +38,7 @@
             <filter name="approved" position="before">
                 <filter
                     name="purchase_order_approved"
-                    string="Approved Orders"
+                    string="Ordenes aprobadas"
                     domain="[('state', '=', 'approved')]"
                 />
             </filter>
