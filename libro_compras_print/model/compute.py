@@ -53,6 +53,58 @@ class account_move(models.Model):
             move.amount_total_signed = abs(total) if move.move_type == 'entry' else -total
             move.amount_residual_signed = total_residual
             move.amount_total_in_currency_signed = abs(move.amount_total) if move.move_type == 'entry' else -(sign * move.amount_total)
-            move.afecto = sign * (move.amount_tax / 0.19)
-            move.exento = sign * (move.amount_untaxed - (move.amount_tax / 0.19))
+            move.afecto = sign * move.amount_untaxed / 0.19
+            move.exento = sign * move.amount_total - (1.19 * move.afecto)
+
+class accountmoveline(models.Model):
+    _inherit="account.move.line"
+
+    afecto = fields.Monetary(string="Afecto", compute="_compute_totals",currency_field='company_currency_id',)
+
+    exento = fields.Monetary(string="Exento", compute="_compute_totals",currency_field='company_currency_id',)
+    
+    @api.depends('quantity', 'discount', 'price_unit', 'tax_ids', 'currency_id')
+    def _compute_totals(self):
+        for line in self:
+            if line.display_type != 'product':
+                line.price_total = line.price_subtotal = False
+            # Compute 'price_subtotal'.
+            line_discount_price_unit = line.price_unit * (1 - (line.discount / 100.0))
+            subtotal = line.quantity * line_discount_price_unit
+
+            # Compute 'price_total'.
+            if line.tax_ids:
+                taxes_res = line.tax_ids.compute_all(
+                    line_discount_price_unit,
+                    quantity=line.quantity,
+                    currency=line.currency_id,
+                    product=line.product_id,
+                    partner=line.partner_id,
+                    is_refund=line.is_refund,
+                )
+                
+                line.price_subtotal = taxes_res['total_excluded']
+                line.price_total = taxes_res['total_included']
+                
+            
+            if line.tax_ids:
+                taxes_res = line.tax_ids.compute_all(
+                    line_discount_price_unit,
+                    quantity=line.quantity,
+                    currency=line.currency_id,
+                    product=line.product_id,
+                    partner=line.partner_id,
+                    is_refund=line.is_refund,
+                )
+                
+                line.price_subtotal = taxes_res['total_included']
+                line.price_total = taxes_res['total_excluded']
+                line.afecto = line.price_subtotal / 0.19
+                line.exento = line.price_total - (1.19 * line.afecto)
+            else:
+                line.price_total = line.price_subtotal = subtotal
+                
+            
+
+    
     
