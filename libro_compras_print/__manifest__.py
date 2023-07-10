@@ -11,7 +11,9 @@
     "depends": ["account"],
     "maintainers": ["JordiBForgeFlow"],
     "data": ["report/journal_report.xml",
-             "views/views.xml"],
+             "views/account_move.xml",
+             "views/purchase.xml",
+             "views/sale.xml",],
     "demo": [],
     "installable": True,
 }

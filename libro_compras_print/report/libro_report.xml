@@ -5,7 +5,8 @@
     <template id="report_journal_entry_document">
         <t t-call="web.external_layout">
             <div class="page">
-                
+
+
                 <!--LIBRO -->
                 <h2>LIBRO DE COMPRAS</h2>
                 <div class="row">
@@ -62,7 +63,6 @@
                 <div class="row">
                     <!-- Aquí puedes agregar el contenido de tu tabla de resumen -->
                     <table name="lines_content" class="table table-sm registro_main_table no-page-break">
-                        
                             <tr>
                                 <th name="th_type_doc" class="text-left">Tipo de Documento</th>
                                 <th name="th_folio" class="text-left">Cantidad de Docs x Tipo</th>
@@ -71,53 +71,27 @@
                                 <th name="th_exento" class="text-left">IVA</th>
                                 <th name="th_total" class="text-left">Total</th>
                             </tr>
-                        
-                            <tbody t-foreach="docs" t-as="registro" t-groupby="registro.l10n_latam_document_type_id.code">
-                                <tr>
-                                    <!-- TIPO DOC -->
-                                    <td><span t-field="registro.l10n_latam_document_type_id"/></td>
-                                    
-                                    <!-- CANTIDAD -->
-                                    <td>1000</td>
-                                    
-                                    <!-- AFECTO -->
-                                    <td><span t-field="registro.afecto" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
-                                    
-                                    <!-- EXCENTO -->
-                                    <td><span t-field="registro.exento" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
-                                    
-                                    <!-- IVA -->
-                                    <td><span t-field="registro.amount_tax" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
-
-                                    <!-- TOTAL -->
-                                     <td><span t-field="registro.amount_total" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
-                                    
-                                </tr>
-                            </tbody>
-
-                        <!--
-                            <tfooter>
-                                <tr>
-                                    <td colspan="1">Total General</td>
-                                    <td>100</td>
-                                    <td>
-                                        <span t-esc="sum(registro.afecto for registro in docs)" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/>
-                                    </td>
+                          <tbody t-foreach="query_results" t-as="registro">
+                            <tr>
+                                <!-- TIPO DOC -->
+                                <td><span t-field="registro.tipo_documento"/></td>
     
-                                    <td>
-                                        <span t-esc="sum(registro.exento for registro in docs)" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/>
-                                    </td>
-                                    
-                                   <td>
-                                        <span t-esc="sum(registro.amount_tax for registro in docs)" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/>
-                                    </td>
-                                    
-                                    <td>
-                                        <span t-esc="sum(registro.amount_total for registro in docs)" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/>
-                                    </td>
-                                </tr>
-                          </tfooter>
-                        -->
+                                <!-- CANTIDAD -->
+                                <td><span t-field="registro.Cantidad_Docs_x_Tipo"/></td>
+    
+                                <!-- AFECTO -->
+                                <td><span t-field="registro.afecto"/></td>
+    
+                                <!-- EXCENTO -->
+                                <td><span t-field="registro.exento"/></td>
+    
+                                <!-- IVA -->
+                                <td><span t-field="registro.Iva"/></td>
+    
+                                <!-- TOTAL -->
+                                <td><span t-field="registro.Total"/></td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -126,7 +100,7 @@
 
      <template id="report_journal_entries">
         <t t-call="web.html_container">
-             <t t-call="libro_compras.report_summary_page"/>
+            <t t-call="libro_compras.report_summary_page"/>
             <t t-call="libro_compras.report_journal_entry_document"/>
         </t>
     </template>
