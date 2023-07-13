@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <data>
+        <template id="report_journal_entry_document">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <!--LIBRO -->
+                    <h2>LIBRO DE COMPRAS</h2>
+                    <div class="row">
+                        <table name="lines_content" class="table table-sm registro_main_table no-page-break">
+                            <thead>
+                                <tr>
+                                    <th name="th_type_id" class="text-left">ID</th>
+                                    <th name="th_type_doc" class="text-left">Tipo de Documento</th>
+                                    <th name="th_folio" class="text-left">Folio</th>
+                                    <th name="th_rut" class="text-left">RUT Nº</th>
+                                    <th name="th_partner" class="text-left">Partner</th>
+                                    <th name="th_date" class="text-left">Fecha de Factura/Recibo</th>
+                                    <th name="th_afecto" class="text-left">Monto Afecto</th>
+                                    <th name="th_exento" class="text-left">Monto Exento</th>
+                                    <th name="th_total" class="text-left">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="docs" t-as="registro">
+                                    <tr>
+                                        <!-- ID -->
+                                        <td><span t-field="registro.id"/></td>
+                                        
+                                        <td><span t-field="registro.l10n_latam_document_type_id"/></td>
+                                        
+                                        <td><span t-field="registro.l10n_latam_document_number"/></td>
+                                        
+                                        <td><span t-field="registro.partner_id.vat"/></td>
+                                        
+                                        <td><span t-field="registro.partner_id.name"/></td>
+                                        
+                                        <td><span t-field="registro.invoice_date_due"/></td>
+    
+                                        <!-- AFECTO -->
+                                        <td><span t-field="registro.afecto" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
+                                        
+                                        <td><span t-field="registro.exento" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
+                                        
+                                        <td><span t-field="registro.amount_total" t-options='{"widget": "monetary", "display_currency": registro.company_currency_id}'/></td>
+                                        
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+        </template>
+        <template id="report_summary_page">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h2>RESUMEN LIBRO DE COMPRAS</h2>
+                    <div class="row">
+                        <!-- Aquí puedes agregar el contenido de tu tabla de resumen -->
+                        <table name="lines_content" class="table table-sm registro_main_table no-page-break">
+                            <tr>
+                                <th name="th_type_doc" class="text-left">Tipo de Documento</th>
+                                <th name="th_folio" class="text-left">Cantidad de Docs x Tipo</th>
+                                <th name="th_afecto" class="text-left">Afecto</th>
+                                <th name="th_exento" class="text-left">Exento</th>
+                                <th name="th_exento" class="text-left">IVA</th>
+                                <th name="th_total" class="text-left">Total</th>
+                            </tr>
+                            <tbody t-foreach="query_results" t-as="registro">
+                                <tr>
+                                    <!-- TIPO DOC -->
+                                   <td><span t-field="registro.tipo_documento"/></td>
+                                    
+                                    <!-- CANTIDAD -->
+                                   <td><span t-field="registro.cantidad_docs_x_tipo"/></td>
+                                    
+                                    <!-- AFECTO -->
+                                   <td><span t-field="registro.afecto"/></td>
+                                    
+                                    <!-- EXCENTO -->
+                                   <td><span t-field="registro.exento"/></td>
+                                    
+                                    <!-- IVA -->
+                                   <td><span t-field="registro.iva"/></td>
+    
+                                    <!-- TOTAL -->
+                                   <td><span t-field="registro.total"/></td> 
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+         </template>
+        <template id="report_journal_entries">
+            <t t-call="web.html_container">
+                 <t t-call="libro_compras.report_summary_page"/>
+                <t t-call="libro_compras.report_journal_entry_document"/>
+            </t>
+        </template>
+        <record id="action_report_journal_entries" model="ir.actions.report">
+            <field name="name">Custom Libro de compras</field>
+            <field name="model">account.move</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">libro_compras.report_journal_entries</field>
+            <field name="report_file">libro_compras.report_journal_entries</field>
+            <field name="binding_model_id" ref="account.model_account_move" />
+            <field name="binding_view_types">list,form</field>
+        </record>
+    </data>
+</odoo>

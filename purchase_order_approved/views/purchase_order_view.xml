@@ -19,7 +19,7 @@
                     name="button_release"
                     type="object"
                     states="approved"
-                    string="Convert to Purchase Order"
+                    string="Convertir a Orden de Compra"
                     class="oe_highlight"
                 />
             </button>
@@ -38,7 +38,7 @@
             <filter name="approved" position="before">
                 <filter
                     name="purchase_order_approved"
-                    string="Approved Orders"
+                    string="Ordenes aprobadas"
                     domain="[('state', '=', 'approved')]"
                 />
             </filter>
