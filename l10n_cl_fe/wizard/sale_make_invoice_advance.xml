@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!-- Inherit Form view -->
+  <record id="view_sale_advance_payment_inv" model="ir.ui.view">
+    <field name="name">view_sale_advance_payment_inv.form</field>
+    <field name="model">sale.advance.payment.inv</field>
+    <field name="inherit_id" ref="sale.view_sale_advance_payment_inv"/>
+    <field name="arch" type="xml">
+      <group position="inside">
+        <field name="use_documents" />
+        <field name="journal_id" options="{'no_create': True}" invisible="1"/>
+        <field name="document_class_ids" invisible="1"/>
+        <field name="journal_document_class_id" options="{'no_create': True}" attrs="{'invisible': [('use_documents', '=', False)]}"/>
+        <field name="referencia_ids" mode="tree">
+            <tree editable="bottom">
+                <field name="fecha_documento" />
+                <field name="folio" required="True" />
+                <field name="sii_referencia_TpoDocRef" required="True" />
+                <field name="motivo" />
+            </tree>
+        </field>
+      </group>
+    </field>
+  </record>
+</odoo>
