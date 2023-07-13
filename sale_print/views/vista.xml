@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+  <data>
+      
+    <record id="sale_print_views" model="ir.ui.view">
+		<field name="name">sale_print.view</field>
+		<field name="model">sale.order.line</field>
+		<field name="inherit_id" ref="sale.sale_order_line_view_form_readonly"/>
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='price_unit']" position="after">
+                <field name="costo_directo" widget="monetary" readonly="1"/>
+                <field name="valor_costo_directo" widget="monetary" readonly="1"/>
+                <field name="gastos_generales" widget="monetary" readonly="1"/>
+                <field name="utilidades" widget="monetary" readonly="1"/>
+                <field name="item"/>
+            </xpath>
+		</field>
+	</record>
+
+  </data>
+</odoo>
