@@ -23,7 +23,7 @@
                 <field name="discount_fixed" groups="base.group_no_one" />
             </xpath>
             <xpath
-                expr="//field[@name='line_ids']/tree/field[@name='discount']"
+                expr="//field[@name='line_ids']/tree/field[@name='discount_amount_currency']"
                 position="before"
             >
                 <field name="discount_fixed" invisible="1" />
